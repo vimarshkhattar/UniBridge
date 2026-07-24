@@ -1,0 +1,480 @@
+import type { CampusEvent, StudentProfile, SurvivalGuide } from "@/lib/types";
+
+export const currentStudent: StudentProfile = {
+  id: "user-001",
+  fullName: "Maya Iyer",
+  email: "maya.iyer@stonybrook.edu",
+  university: "Stony Brook University",
+  major: "Computer Science",
+  academicYear: "Graduate",
+  country: "India",
+  languages: ["English", "Hindi", "Tamil"],
+  courses: ["CSE 532", "CSE 548", "AMS 561"],
+  interests: ["Hackathons", "Badminton", "Cooking", "Career prep"],
+  preferredActivities: ["Study sessions", "Coffee chats", "Campus events"],
+  studyStyle: "Quiet focus with planned breaks",
+  preferredStudyTimes: ["Evenings", "Weekends"],
+  studentStatus: "New student",
+  connectionTypes: ["Study partner", "Friend", "Event buddy", "English practice partner"],
+  bio: "New graduate student hoping to find study partners, attend more campus events, and understand US classroom expectations.",
+  avatarColor: "bg-primary"
+};
+
+export const students: StudentProfile[] = [
+  currentStudent,
+  {
+    id: "user-002",
+    fullName: "Daniel Kim",
+    email: "daniel.kim@stonybrook.edu",
+    university: "Stony Brook University",
+    major: "Computer Science",
+    academicYear: "Senior",
+    country: "South Korea",
+    languages: ["English", "Korean"],
+    courses: ["CSE 532", "CSE 416", "AMS 561"],
+    interests: ["Hackathons", "Soccer", "Career prep"],
+    preferredActivities: ["Study sessions", "Campus events"],
+    studyStyle: "Quiet focus with planned breaks",
+    preferredStudyTimes: ["Evenings"],
+    studentStatus: "Returning student",
+    connectionTypes: ["Study partner", "Event buddy", "Friend"],
+    bio: "Returning student who likes helping newer international students get comfortable with group projects and office hours.",
+    avatarColor: "bg-sky-700"
+  },
+  {
+    id: "user-003",
+    fullName: "Sofia Martinez",
+    email: "sofia.martinez@stonybrook.edu",
+    university: "Stony Brook University",
+    major: "Biomedical Engineering",
+    academicYear: "Junior",
+    country: "Mexico",
+    languages: ["English", "Spanish"],
+    courses: ["BME 304", "CHE 321", "WRT 303"],
+    interests: ["Volunteering", "Movies", "Cooking"],
+    preferredActivities: ["Coffee chats", "Campus events"],
+    studyStyle: "Group review and practice problems",
+    preferredStudyTimes: ["Afternoons"],
+    studentStatus: "Returning student",
+    connectionTypes: ["Friend", "Event buddy", "Same-country connection"],
+    bio: "Enjoys cultural events, volunteering, and helping friends prepare for presentations.",
+    avatarColor: "bg-rose-600"
+  },
+  {
+    id: "user-004",
+    fullName: "Chen Wei",
+    email: "chen.wei@stonybrook.edu",
+    university: "Stony Brook University",
+    major: "Applied Mathematics",
+    academicYear: "Graduate",
+    country: "China",
+    languages: ["English", "Mandarin"],
+    courses: ["AMS 561", "AMS 595", "CSE 548"],
+    interests: ["Board games", "Badminton", "Research"],
+    preferredActivities: ["Study sessions", "Gym"],
+    studyStyle: "Quiet focus with planned breaks",
+    preferredStudyTimes: ["Mornings", "Weekends"],
+    studentStatus: "New student",
+    connectionTypes: ["Study partner", "Gym partner", "Friend"],
+    bio: "Looking for steady study partners and people interested in exploring campus recreation.",
+    avatarColor: "bg-emerald-700"
+  },
+  {
+    id: "user-005",
+    fullName: "Amina Hassan",
+    email: "amina.hassan@stonybrook.edu",
+    university: "Stony Brook University",
+    major: "Economics",
+    academicYear: "Sophomore",
+    country: "Egypt",
+    languages: ["English", "Arabic"],
+    courses: ["ECO 303", "MAT 126", "POL 102"],
+    interests: ["Student clubs", "Photography", "Career prep"],
+    preferredActivities: ["Campus events", "Coffee chats"],
+    studyStyle: "Group review and practice problems",
+    preferredStudyTimes: ["Evenings"],
+    studentStatus: "Returning student",
+    connectionTypes: ["Friend", "English practice partner", "Event buddy"],
+    bio: "Happy to meet people for club fairs, library study blocks, and low-pressure conversation practice.",
+    avatarColor: "bg-amber-600"
+  },
+  {
+    id: "user-006",
+    fullName: "Lucas Pereira",
+    email: "lucas.pereira@nyu.edu",
+    university: "New York University",
+    major: "Data Science",
+    academicYear: "Graduate",
+    country: "Brazil",
+    languages: ["English", "Portuguese", "Spanish"],
+    courses: ["DS 1003", "CSE 532"],
+    interests: ["Soccer", "Hackathons", "Music"],
+    preferredActivities: ["Campus events", "Study sessions"],
+    studyStyle: "Flexible, depends on the class",
+    preferredStudyTimes: ["Weekends"],
+    studentStatus: "New student",
+    connectionTypes: ["Study partner", "Friend", "Event buddy"],
+    bio: "Interested in meeting international students across New York campuses for projects and events.",
+    avatarColor: "bg-indigo-700"
+  },
+  {
+    id: "user-007",
+    fullName: "Nora Lind",
+    email: "nora.lind@stonybrook.edu",
+    university: "Stony Brook University",
+    major: "Psychology",
+    academicYear: "Exchange",
+    country: "Norway",
+    languages: ["English", "Norwegian"],
+    courses: ["PSY 310", "SOC 247", "WRT 303"],
+    interests: ["Hiking", "Movies", "American culture"],
+    preferredActivities: ["Campus events", "Coffee chats"],
+    studyStyle: "Short focused sessions",
+    preferredStudyTimes: ["Afternoons", "Weekends"],
+    studentStatus: "New student",
+    connectionTypes: ["Friend", "Event buddy", "Roommate search"],
+    bio: "Exchange student hoping to attend events with a buddy and learn how campus life works here.",
+    avatarColor: "bg-cyan-700"
+  },
+  {
+    id: "user-008",
+    fullName: "Omar Al-Fayed",
+    email: "omar.alfayed@stonybrook.edu",
+    university: "Stony Brook University",
+    major: "Mechanical Engineering",
+    academicYear: "Junior",
+    country: "Jordan",
+    languages: ["English", "Arabic"],
+    courses: ["MEC 301", "MAT 303", "PHY 132"],
+    interests: ["Gym", "Soccer", "Robotics"],
+    preferredActivities: ["Gym", "Study sessions"],
+    studyStyle: "Group review and practice problems",
+    preferredStudyTimes: ["Mornings"],
+    studentStatus: "Returning student",
+    connectionTypes: ["Gym partner", "Study partner", "Friend"],
+    bio: "Likes structured study groups and weekend soccer. Open to helping new students find engineering resources.",
+    avatarColor: "bg-slate-700"
+  },
+  {
+    id: "user-009",
+    fullName: "Priya Nair",
+    email: "priya.nair@stonybrook.edu",
+    university: "Stony Brook University",
+    major: "Business Management",
+    academicYear: "First year",
+    country: "India",
+    languages: ["English", "Malayalam", "Hindi"],
+    courses: ["BUS 215", "ECO 108", "WRT 102"],
+    interests: ["Cooking", "Dance", "Student clubs"],
+    preferredActivities: ["Campus events", "Coffee chats"],
+    studyStyle: "Short focused sessions",
+    preferredStudyTimes: ["Evenings"],
+    studentStatus: "New student",
+    connectionTypes: ["Same-country connection", "Friend", "Event buddy"],
+    bio: "First-year student looking for friendly people to attend orientation activities and club meetings with.",
+    avatarColor: "bg-fuchsia-700"
+  },
+  {
+    id: "user-010",
+    fullName: "Kenji Tanaka",
+    email: "kenji.tanaka@buffalo.edu",
+    university: "University at Buffalo",
+    major: "Computer Science",
+    academicYear: "Graduate",
+    country: "Japan",
+    languages: ["English", "Japanese"],
+    courses: ["CSE 548", "CSE 562"],
+    interests: ["Research", "Board games", "Career prep"],
+    preferredActivities: ["Study sessions"],
+    studyStyle: "Quiet focus with planned breaks",
+    preferredStudyTimes: ["Mornings", "Weekends"],
+    studentStatus: "Returning student",
+    connectionTypes: ["Study partner", "English practice partner"],
+    bio: "Interested in connecting with students taking similar systems and data courses across SUNY schools.",
+    avatarColor: "bg-violet-700"
+  },
+  {
+    id: "user-011",
+    fullName: "Leila Haddad",
+    email: "leila.haddad@stonybrook.edu",
+    university: "Stony Brook University",
+    major: "Public Health",
+    academicYear: "Graduate",
+    country: "Lebanon",
+    languages: ["English", "Arabic", "French"],
+    courses: ["HPH 501", "SOC 247", "WRT 303"],
+    interests: ["Volunteering", "Food", "American culture"],
+    preferredActivities: ["Coffee chats", "Campus events"],
+    studyStyle: "Flexible, depends on the class",
+    preferredStudyTimes: ["Afternoons"],
+    studentStatus: "New student",
+    connectionTypes: ["Friend", "Event buddy", "English practice partner"],
+    bio: "Looking for low-pressure ways to meet people and learn how student services work.",
+    avatarColor: "bg-teal-700"
+  },
+  {
+    id: "user-012",
+    fullName: "Ravi Patel",
+    email: "ravi.patel@stonybrook.edu",
+    university: "Stony Brook University",
+    major: "Computer Science",
+    academicYear: "Senior",
+    country: "United States",
+    languages: ["English", "Gujarati"],
+    courses: ["CSE 416", "CSE 548", "CSE 373"],
+    interests: ["Hackathons", "Mentoring", "Career prep"],
+    preferredActivities: ["Study sessions", "Campus events"],
+    studyStyle: "Quiet focus with planned breaks",
+    preferredStudyTimes: ["Evenings"],
+    studentStatus: "Returning student",
+    connectionTypes: ["Study partner", "Friend"],
+    bio: "Local commuter student who enjoys helping international classmates navigate projects and recruiting.",
+    avatarColor: "bg-blue-800"
+  }
+];
+
+export const events: CampusEvent[] = [
+  {
+    id: "event-001",
+    name: "International Student Welcome Circle",
+    description: "Small-group introductions, campus tips, and a guided walk to key student services.",
+    startsAt: "2026-08-24T15:00:00-04:00",
+    location: "Student Activities Center",
+    category: "International student orientation",
+    organizer: "Sample International Student Team",
+    interestedCount: 48,
+    buddyCount: 21,
+    sampleLabel: "Sample community-added event"
+  },
+  {
+    id: "event-002",
+    name: "Campus Involvement Fair Meetup",
+    description: "Find someone to walk through club tables with and compare organizations afterward.",
+    startsAt: "2026-09-03T13:00:00-04:00",
+    location: "Academic Mall",
+    category: "Campus involvement fair",
+    organizer: "Sample Student Life Group",
+    interestedCount: 72,
+    buddyCount: 34,
+    sampleLabel: "Sample community-added event"
+  },
+  {
+    id: "event-003",
+    name: "Resume Prep for International Students",
+    description: "Workshop-style session covering US resume norms and campus career resources.",
+    startsAt: "2026-09-10T17:30:00-04:00",
+    location: "Career Center Workshop Room",
+    category: "Career fair",
+    organizer: "Sample Career Peer Mentors",
+    interestedCount: 39,
+    buddyCount: 11,
+    sampleLabel: "Sample community-added event"
+  },
+  {
+    id: "event-004",
+    name: "Cultural Club Sampler Night",
+    description: "A relaxed evening to visit cultural club tables, taste snacks, and meet members.",
+    startsAt: "2026-09-18T18:00:00-04:00",
+    location: "SAC Ballroom",
+    category: "Cultural club meeting",
+    organizer: "Sample Multicultural Council",
+    interestedCount: 64,
+    buddyCount: 28,
+    sampleLabel: "Sample community-added event"
+  },
+  {
+    id: "event-005",
+    name: "Library Research Basics",
+    description: "Learn how to search databases, request help, and cite sources for class projects.",
+    startsAt: "2026-09-22T14:00:00-04:00",
+    location: "Melville Library Instruction Lab",
+    category: "Library workshop",
+    organizer: "Sample Library Peer Guides",
+    interestedCount: 26,
+    buddyCount: 9,
+    sampleLabel: "Sample community-added event"
+  },
+  {
+    id: "event-006",
+    name: "Weekend Soccer Pickup",
+    description: "Beginner-friendly pickup game for students who want exercise and easy conversation.",
+    startsAt: "2026-09-26T10:00:00-04:00",
+    location: "South P Lot Field",
+    category: "Soccer game",
+    organizer: "Sample Recreation Group",
+    interestedCount: 31,
+    buddyCount: 13,
+    sampleLabel: "Sample community-added event"
+  },
+  {
+    id: "event-007",
+    name: "Midterm Study Planning Clinic",
+    description: "Build a realistic study plan, find classmates, and learn when to ask for academic help.",
+    startsAt: "2026-10-07T16:00:00-04:00",
+    location: "Central Reading Room",
+    category: "Study workshop",
+    organizer: "Sample Academic Success Team",
+    interestedCount: 43,
+    buddyCount: 19,
+    sampleLabel: "Sample community-added event"
+  },
+  {
+    id: "event-008",
+    name: "Beginner Hackathon Team Finder",
+    description: "Meet potential teammates before a weekend hackathon and discuss project ideas.",
+    startsAt: "2026-10-16T18:30:00-04:00",
+    location: "Computer Science Lobby",
+    category: "Hackathon",
+    organizer: "Sample Computing Society",
+    interestedCount: 57,
+    buddyCount: 22,
+    sampleLabel: "Sample community-added event"
+  }
+];
+
+export const guides: SurvivalGuide[] = [
+  {
+    id: "guide-001",
+    title: "How office hours work",
+    summary: "What office hours are, when to go, and how to prepare a useful question.",
+    category: "Academics",
+    readingTime: "5 min",
+    lastUpdated: "2026-07-01",
+    sections: [
+      { heading: "What they are", body: "Office hours are scheduled times when instructors or TAs are available for student questions." },
+      { heading: "How to prepare", body: "Bring the course name, assignment, what you tried, and the specific point where you got stuck." }
+    ],
+    examples: ["I tried problem 3 using the method from lecture, but I am confused about the boundary condition."],
+    checklist: ["Check the syllabus", "Prepare one or two specific questions", "Arrive on time", "Take notes on next steps"]
+  },
+  {
+    id: "guide-002",
+    title: "How to email a professor",
+    summary: "A simple structure for respectful, clear academic email.",
+    category: "Communication",
+    readingTime: "4 min",
+    lastUpdated: "2026-07-01",
+    sections: [
+      { heading: "Use context", body: "Include your course, section, and the reason for writing near the beginning." },
+      { heading: "Be specific", body: "Ask one clear question or request one clear action." }
+    ],
+    examples: ["Subject: Question about CSE 532 project checkpoint"],
+    checklist: ["Use a clear subject", "State your class", "Be polite and concise", "Review names and dates"]
+  },
+  {
+    id: "guide-003",
+    title: "Understanding a course syllabus",
+    summary: "Where to find grading, deadlines, office hours, policies, and required materials.",
+    category: "Academics",
+    readingTime: "6 min",
+    lastUpdated: "2026-07-01",
+    sections: [
+      { heading: "Read early", body: "The syllabus is usually the first place to check for assignments, grading weights, and attendance expectations." },
+      { heading: "Confirm changes", body: "Instructors may update details during the term, so also watch the course site and announcements." }
+    ],
+    examples: ["Put exam dates and major project deadlines into your calendar during week one."],
+    checklist: ["Find grading weights", "Save office hours", "Check late policy", "Track exam dates"]
+  },
+  {
+    id: "guide-004",
+    title: "Understanding academic integrity",
+    summary: "How to avoid accidental plagiarism, unauthorized collaboration, and citation problems.",
+    category: "Academics",
+    readingTime: "7 min",
+    lastUpdated: "2026-07-01",
+    sections: [
+      { heading: "Ask before collaborating", body: "Rules differ by class. If you are unsure whether help is allowed, ask the instructor or TA." },
+      { heading: "Cite sources", body: "Give credit for ideas, text, code, data, and images that are not your own." }
+    ],
+    examples: ["It is safer to ask, 'Can we discuss the approach, or should we work completely separately?'"],
+    checklist: ["Read course rules", "Cite sources", "Do your own submitted work", "Ask when unsure"],
+    disclaimer: "Confirm official policies and consequences with your university or instructor."
+  },
+  {
+    id: "guide-005",
+    title: "Preparing for winter in New York",
+    summary: "Practical clothing, commuting, and health tips for students new to cold weather.",
+    category: "Campus life",
+    readingTime: "5 min",
+    lastUpdated: "2026-07-01",
+    sections: [
+      { heading: "Dress in layers", body: "A warm coat, gloves, hat, and waterproof shoes make winter commutes more manageable." },
+      { heading: "Plan travel time", body: "Snow and ice can slow buses, trains, walking routes, and parking." }
+    ],
+    examples: ["Keep a small umbrella or compact gloves in your bag during late fall."],
+    checklist: ["Buy winter layers", "Check weather alerts", "Leave earlier", "Know indoor routes where possible"]
+  },
+  {
+    id: "guide-006",
+    title: "Speaking with an academic advisor",
+    summary: "How to prepare questions about degree progress, requirements, and course choices.",
+    category: "Stony Brook resources",
+    readingTime: "5 min",
+    lastUpdated: "2026-07-01",
+    sections: [
+      { heading: "Bring your goal", body: "Tell the advisor whether you need help with registration, requirements, transfer credits, or graduation planning." },
+      { heading: "Follow official guidance", body: "Advisors can point you to policies and offices that apply to your program." }
+    ],
+    examples: ["I am choosing between two courses. Which one better fits my degree progress this semester?"],
+    checklist: ["Review your degree audit", "List questions", "Write down recommendations", "Confirm deadlines"],
+    disclaimer: "For official Stony Brook policies, deadlines, visa questions, employment restrictions, and requirements, confirm with the relevant university office."
+  },
+  {
+    id: "guide-007",
+    title: "Finding tutoring",
+    summary: "How to look for academic help before small confusion becomes a major problem.",
+    category: "Academics",
+    readingTime: "4 min",
+    lastUpdated: "2026-07-01",
+    sections: [
+      { heading: "Start early", body: "Tutoring, office hours, peer study, and review sessions work best before the exam week rush." },
+      { heading: "Bring evidence", body: "Show your notes, assignment attempt, or practice question so helpers can see where you are stuck." }
+    ],
+    examples: ["I understand the lecture example, but I cannot start the homework version."],
+    checklist: ["Check course resources", "Ask a TA", "Book tutoring if available", "Review after the session"]
+  },
+  {
+    id: "guide-008",
+    title: "Joining clubs and student organizations",
+    summary: "Low-pressure ways to meet students beyond your classes.",
+    category: "Campus life",
+    readingTime: "4 min",
+    lastUpdated: "2026-07-01",
+    sections: [
+      { heading: "Try more than one", body: "It is normal to visit several clubs before choosing where you feel comfortable." },
+      { heading: "Attend with a buddy", body: "Going with another student can make the first meeting feel easier." }
+    ],
+    examples: ["Message: Hi, I am new here. Is this meeting open to first-time visitors?"],
+    checklist: ["Find meeting times", "Ask if visitors are welcome", "Attend once", "Follow up with someone you met"]
+  },
+  {
+    id: "guide-009",
+    title: "Applying for on-campus jobs",
+    summary: "What to prepare before asking about student employment opportunities.",
+    category: "Employment",
+    readingTime: "6 min",
+    lastUpdated: "2026-07-01",
+    sections: [
+      { heading: "Know your eligibility", body: "International students should confirm employment rules before accepting work." },
+      { heading: "Prepare documents", body: "Have a simple resume and your schedule ready when applying." }
+    ],
+    examples: ["Could you tell me whether this position is open to student applicants this semester?"],
+    checklist: ["Confirm eligibility", "Prepare resume", "Check hours", "Ask official office when unsure"],
+    disclaimer: "International employment rules can be strict. Confirm visa and work authorization questions with the official international student office."
+  },
+  {
+    id: "guide-010",
+    title: "What to expect during international student orientation",
+    summary: "How to use orientation to meet people and understand important campus systems.",
+    category: "Stony Brook resources",
+    readingTime: "5 min",
+    lastUpdated: "2026-07-01",
+    sections: [
+      { heading: "Expect lots of information", body: "Orientation often covers practical topics, campus resources, safety, and academic expectations." },
+      { heading: "Make one connection", body: "You do not need to meet everyone. Aim for one conversation you can continue later." }
+    ],
+    examples: ["Want to exchange contact info and compare notes after the session?"],
+    checklist: ["Bring ID if required", "Save important links", "Ask questions", "Follow up with one person"],
+    disclaimer: "Confirm official orientation requirements and dates with Stony Brook or your university."
+  }
+];
