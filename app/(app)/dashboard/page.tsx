@@ -76,7 +76,7 @@ export default function DashboardPage() {
               {[
                 [UsersRound, "Student matches", "Compare courses, interests, languages, and study style."],
                 [CalendarDays, "Event buddies", "Join small groups so campus events feel easier to attend."],
-                [MessageSquareText, "AI help", "Draft messages and ask campus-life questions in simple language."]
+                [MessageSquareText, "Message help", "Draft messages and ask campus-life questions in simple language."]
               ].map(([Icon, title, text]) => (
                 <div key={String(title)} className="rounded-md border border-border bg-muted p-3">
                   <Icon className="size-5 text-primary" aria-hidden />

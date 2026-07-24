@@ -66,7 +66,7 @@ export default function AssistantPage() {
   return (
     <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       <section>
-        <h1 className="text-3xl font-bold text-navy">AI Communication Assistant</h1>
+        <h1 className="text-3xl font-bold text-navy">Communication Helper</h1>
         <p className="mt-2 text-muted-foreground">Draft respectful university messages without inventing policies, facts, or official guidance.</p>
         <Card className="mt-6">
           <CardHeader><CardTitle>Message details</CardTitle></CardHeader>

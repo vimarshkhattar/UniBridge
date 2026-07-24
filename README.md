@@ -2,60 +2,76 @@
 
 **Connect. Belong. Succeed.**
 
-UniBridge is a campus connection and adjustment platform for international university students. The MVP is designed for students from any university, with launch-oriented sample content for Stony Brook University.
+UniBridge is a student connection and adjustment platform for international university students. It helps students build a useful profile, discover compatible classmates, send connection requests, find event buddies, create small groups, read practical guides, and draft respectful university messages.
 
-## Problem
-
-International students often arrive with practical and social questions that are hard to solve alone: finding study partners, understanding office hours, attending events, writing appropriate academic messages, locating resources, and feeling less isolated. UniBridge turns those moments into guided, safer next steps.
-
-## Main Features
-
-- Public landing page with Stony Brook launch positioning
-- Supabase-ready sign up, sign in, sign out, forgot password, and protected app routes
-- Multi-step-style onboarding form and editable international student profile
-- Stony Brook domain badge for `@stonybrook.edu` emails, clearly labeled as a matching-domain indicator only
-- Discover Students page with filters and transparent rule-based match scores
-- Connection requests, accepted connections, saved-profile affordances, and conversation placeholders
-- Campus Events page with sample/community-added labels, event buddy requests, and buddy group placeholders
-- Server-side Groq AI communication assistant with mock fallback when `GROQ_API_KEY` is missing
-- Searchable Survival Guides with disclaimers for changing university-specific rules
-- Community guidelines, privacy placeholder, and terms placeholder
-- Supabase PostgreSQL schema, RLS policies, indexes, and seed SQL
+The MVP is built for deployment with Supabase, Groq, and Vercel, with Stony Brook-oriented sample content for launch testing.
 
 ## Screenshots
 
-Add screenshots after running locally:
+### Landing Page
 
-- Landing page
-- Dashboard
-- Discover Students
-- Events
-- AI Assistant
-- Survival Guides
+![UniBridge landing page](docs/screenshots/landing.png)
 
-## Technology Stack
+### Dashboard
+
+![UniBridge dashboard](docs/screenshots/dashboard.png)
+
+### Discover Students
+
+![UniBridge discover students page](docs/screenshots/discover.png)
+
+### Events
+
+![UniBridge events page](docs/screenshots/events.png)
+
+### Connections
+
+![UniBridge connections page](docs/screenshots/connections.png)
+
+### Communication Helper
+
+![UniBridge communication helper](docs/screenshots/communication-helper.png)
+
+## What Users Can Do
+
+- Create an account with a university email
+- Complete a profile with university, major, courses, languages, interests, bio, and profile photo
+- See profile completion progress
+- Discover student matches with visible match scores
+- Send, accept, decline, and remove connection requests
+- Save profiles and revisit them from the Connections area
+- Browse campus events
+- Join events and request an event buddy
+- Create, join, leave, and delete buddy groups
+- Use a campus question chatbot on the dashboard
+- Draft more respectful university messages with the communication helper
+- Read survival guides for common international student questions
+
+## Tech Stack
 
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
-- shadcn/ui-inspired local primitives
-- Supabase Auth, PostgreSQL, Storage-ready architecture
-- Groq API from a secure server route
-- Zod
-- React Hook Form dependency included for production form expansion
-- Lucide React
-- Vitest
-- Vercel-compatible deployment
+- Supabase Auth and PostgreSQL
+- Groq API through secure server routes
+- Zod validation
+- Lucide React icons
+- Vitest tests
+- Vercel deployment
 
-## Architecture
+## Project Structure
 
-The app uses sample data in `lib/sample-data.ts` for launch content, while user-owned actions sync to Supabase when credentials are configured. Supabase clients live in `lib/supabase`, and the database contract is documented in `supabase/schema.sql`. The matching algorithm is isolated in `lib/matching.ts`, and validation schemas live in `lib/validation.ts`.
-
-Protected routes are grouped under `app/(app)` and wrapped by a shared app shell with desktop sidebar and mobile bottom navigation. Middleware protects those routes when Supabase environment variables are configured. Without Supabase variables, the app remains demoable locally.
+```bash
+app/                 Next.js routes and pages
+components/          Reusable UI and feature components
+lib/                 Data, stores, validation, matching, and Supabase helpers
+supabase/            Reset, schema, and seed SQL files
+docs/screenshots/    README screenshots
+```
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local` and fill values as needed:
+Create `.env.local` from `.env.example` and add:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
@@ -65,70 +81,63 @@ GROQ_API_KEY=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-Never commit real credentials.
+Do not commit real keys.
 
-## Local Installation
+## Local Setup
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open:
+
+```bash
+http://localhost:3000
+```
 
 ## Supabase Setup
 
-1. Create a Supabase project.
-2. Add the values from Project Settings to `.env.local`.
-3. Run `supabase/schema.sql` in the Supabase SQL editor.
-4. Run `supabase/seed.sql` in the SQL editor for fictional demo data.
-5. Create a private storage bucket later for profile photos if you want uploaded avatars.
+Run these files in Supabase SQL Editor in this order:
 
-The schema includes RLS policies so students can modify their own private information, authenticated students can read discoverable profiles subject to privacy settings, and user-owned actions are scoped to the signed-in account.
+1. `supabase/reset.sql`
+2. `supabase/schema.sql`
+3. `supabase/seed.sql`
 
-## Groq Setup
+Use `reset.sql` only when you are okay deleting old test data.
 
-Add `GROQ_API_KEY` to `.env.local` and to Vercel environment variables. The assistant route is `app/api/assistant/route.ts`; no Groq key is exposed to client-side code. When no key is configured, the route returns clearly marked mock output for development demos.
+The schema includes row-level security so user-owned actions stay scoped to the signed-in account.
 
-## Commands
+## Useful Commands
 
 ```bash
 npm run dev
 npm run build
 npm run lint
 npm run typecheck
-npm run test
-npm run seed
+npm test
 ```
-
-`npm run seed` checks Supabase connectivity and points you to `supabase/seed.sql`. For full SQL seeding, paste the seed file into the Supabase SQL editor or wire an approved SQL RPC.
 
 ## Deployment
 
-Deploy on Vercel:
+Deploy with Vercel:
 
-1. Push the repository to GitHub.
-2. Import the project in Vercel.
-3. Add Supabase and Groq environment variables.
-4. Run the Supabase schema and seed SQL.
+1. Push this project to GitHub.
+2. Import the GitHub repo in Vercel.
+3. Add the environment variables in Vercel.
+4. Run the Supabase SQL files.
 5. Deploy.
+6. Add the live Vercel URL in Supabase Authentication URL settings.
 
-## Known Limitations
+Recommended Supabase redirect URLs:
 
-- Some launch-content screens keep a local fallback so the app remains usable if Supabase is not configured.
-- Messaging is represented by a “Start Conversation” placeholder.
-- Legal pages are placeholders and should be reviewed before public launch.
-- Sample Stony Brook content is not official and must not be presented as guaranteed policy.
+```bash
+https://your-vercel-project.vercel.app/**
+http://localhost:3000/**
+```
 
-## Future Improvements
+## Safety Notes
 
-- Supabase storage-backed avatars
-- Direct messaging
-- Approved campus calendar feed integration
-- Email verification enforcement
-- End-to-end tests with Playwright
-- Analytics and recommendation tuning
+UniBridge is designed around safer student connections. Students should meet in public campus spaces, avoid sharing sensitive personal or financial information, report suspicious behavior, and confirm official university policies with the correct university office.
 
-## Safety And Privacy Notes
-
-Meet new people in public campus locations, avoid sharing financial or sensitive personal information, report suspicious behavior, and independently verify housing, ride-sharing, employment, and marketplace-like arrangements. UniBridge does not implement marketplace features in this MVP.
+Sample Stony Brook content is for MVP testing and should not be presented as official university policy.

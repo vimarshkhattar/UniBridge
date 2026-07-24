@@ -79,7 +79,7 @@ export async function POST(request: Request) {
   });
 
   const content = completion.choices[0]?.message?.content;
-  if (!content) return NextResponse.json({ error: "No AI response returned." }, { status: 502 });
+  if (!content) return NextResponse.json({ error: "No assistant response returned." }, { status: 502 });
 
   return NextResponse.json({ mock: false, ...JSON.parse(content) });
 }

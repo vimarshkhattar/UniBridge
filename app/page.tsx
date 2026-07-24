@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const features = [
   { icon: UsersRound, title: "Compatible student matches", text: "Find study partners, friends, event buddies, language practice partners, and same-country connections." },
   { icon: CalendarDays, title: "Campus event buddies", text: "Browse sample Stony Brook launch events and join small groups so you do not have to attend alone." },
-  { icon: MessageSquareText, title: "AI communication coach", text: "Draft respectful emails, text messages, group-project notes, and conversation outlines with cultural context." },
+  { icon: MessageSquareText, title: "Communication helper", text: "Draft respectful emails, text messages, group-project notes, and conversation outlines with cultural context." },
   { icon: BookOpen, title: "Survival guides", text: "Search practical guides for office hours, syllabi, academic integrity, campus life, jobs, and winter in New York." }
 ];
 
@@ -171,7 +171,7 @@ export default function LandingPage() {
           {[
             ["Is UniBridge only for Stony Brook?", "No. The MVP launches with Stony Brook-oriented sample content, but the schema and profile model support any university."],
             ["Is the verified badge official?", "No. It only means the email domain matches @stonybrook.edu. It is not an endorsement or official university verification."],
-            ["Does the AI know university rules?", "No. It helps with communication style and structure. Students should confirm policies, deadlines, visa issues, and requirements with official offices."],
+            ["Does the communication helper know university rules?", "No. It helps with communication style and structure. Students should confirm policies, deadlines, visa issues, and requirements with official offices."],
             ["Can I hide profile details?", "Yes. Profile privacy controls are part of the protected app experience."]
           ].map(([question, answer]) => (
             <Card key={question}>
