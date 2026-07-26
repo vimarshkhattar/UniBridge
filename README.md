@@ -16,21 +16,12 @@ The MVP is built for deployment with Supabase, Groq, and Vercel, with Stony Broo
 
 ![UniBridge dashboard](docs/screenshots/dashboard.png)
 
-### Discover Students
-
-![UniBridge discover students page](docs/screenshots/discover.png)
-
-### Events
-
-![UniBridge events page](docs/screenshots/events.png)
 
 ### Connections
 
 ![UniBridge connections page](docs/screenshots/connections.png)
 
-### Communication Helper
 
-![UniBridge communication helper](docs/screenshots/communication-helper.png)
 
 ## What Users Can Do
 
