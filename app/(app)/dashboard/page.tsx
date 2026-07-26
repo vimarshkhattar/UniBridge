@@ -10,11 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConnectionsState } from "@/lib/connections-store";
 import { events, guides, students } from "@/lib/sample-data";
 import { calculateMatchScore } from "@/lib/matching";
-import { calculateProfileCompletion, useDemoProfile } from "@/lib/profile-store";
+import { calculateProfileCompletion, useStoredProfile } from "@/lib/profile-store";
 import { initials } from "@/lib/utils";
 
 export default function DashboardPage() {
-  const { profile } = useDemoProfile();
+  const { profile } = useStoredProfile();
   const { state: connections } = useConnectionsState();
   const firstName = profile.fullName.split(" ")[0] || "there";
   const profileCompletion = calculateProfileCompletion(profile);

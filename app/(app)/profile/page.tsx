@@ -6,11 +6,11 @@ import { VerifiedBadge } from "@/components/verified-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { listFromInput, useDemoProfile } from "@/lib/profile-store";
+import { listFromInput, useStoredProfile } from "@/lib/profile-store";
 import { initials } from "@/lib/utils";
 
 export default function ProfilePage() {
-  const { profile, updateProfile } = useDemoProfile();
+  const { profile, updateProfile } = useStoredProfile();
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [photoMessage, setPhotoMessage] = useState("");
@@ -98,7 +98,7 @@ export default function ProfilePage() {
       setSaved(false);
       setSaveError(
         error instanceof DOMException && error.name === "QuotaExceededError"
-          ? "This photo is still too large for browser demo storage. Try a smaller image."
+          ? "This photo is still too large to save locally. Try a smaller image."
           : "Profile could not be saved. Please try again."
       );
     }
@@ -136,7 +136,7 @@ export default function ProfilePage() {
             <p className="text-muted-foreground">{profile.bio}</p>
             {reportSubmitted ? (
               <p className="rounded-md border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800">
-                Report submitted for demo review.
+                Report submitted for review.
               </p>
             ) : (
               <Button type="button" variant="secondary" onClick={() => setReportOpen((open) => !open)}>
@@ -146,7 +146,7 @@ export default function ProfilePage() {
             {reportOpen && (
               <form action={handleReport} className="grid gap-3 rounded-md border border-border bg-muted p-3">
                 <p className="text-sm text-muted-foreground">
-                  This is a safety feature for reporting suspicious, fake, or inappropriate profiles. In the demo, it shows how a report would be collected.
+                  Use this safety feature to report suspicious, fake, or inappropriate profiles. Your report reason is collected so the issue can be reviewed.
                 </p>
                 <label className="grid gap-2 text-sm font-medium text-navy">
                   Reason
@@ -170,7 +170,7 @@ export default function ProfilePage() {
                 Profile photo
                 <Input name="avatar" type="file" accept="image/*" onChange={handlePhotoChange} />
               </label>
-              <p className="mt-2 text-xs text-muted-foreground">Upload a photo for the demo preview. If you skip this, UniBridge uses your initials avatar.</p>
+              <p className="mt-2 text-xs text-muted-foreground">Upload a photo for your profile preview. If you skip this, UniBridge uses your initials avatar.</p>
               {photoMessage && <p className="mt-2 text-xs font-medium text-primary">{photoMessage}</p>}
               {displayAvatarUrl && (
                 <Button type="button" variant="secondary" className="mt-3" onClick={() => setAvatarOverride("")}>

@@ -9,7 +9,7 @@ export async function signUpAction(formData: FormData) {
   const fullName = String(formData.get("fullName") ?? "");
   const supabase = await createSupabaseServerClient();
 
-  if (!supabase) redirect("/onboarding?demo=1");
+  if (!supabase) redirect("/onboarding");
 
   const { error } = await supabase.auth.signUp({
     email,

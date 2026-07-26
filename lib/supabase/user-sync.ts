@@ -3,7 +3,7 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { events, students } from "@/lib/sample-data";
 import type { BuddyGroupDetails, BuddyState } from "@/lib/event-buddy-store";
-import { defaultDemoProfile, type DemoProfile } from "@/lib/profile-store";
+import { defaultStoredProfile, type StoredProfile } from "@/lib/profile-store";
 import type { ConnectionType } from "@/lib/types";
 
 type CurrentUser = {
@@ -53,7 +53,7 @@ type BuddyGroupRow = {
 };
 type BuddyMemberRow = { group_id: string; user_id: string };
 
-function studentStatus(value: string | null): DemoProfile["studentStatus"] {
+function studentStatus(value: string | null): StoredProfile["studentStatus"] {
   return value === "Returning student" ? "Returning student" : "New student";
 }
 
@@ -167,35 +167,35 @@ export async function loadCurrentUserProfile() {
     .eq("user_id", user.id);
 
   return {
-    ...defaultDemoProfile,
+    ...defaultStoredProfile,
     id: data.id,
     fullName: data.full_name,
     email: data.email,
-    university: data.universities?.name ?? defaultDemoProfile.university,
+    university: data.universities?.name ?? defaultStoredProfile.university,
     avatarUrl: data.avatar_url ?? undefined,
-    major: data.major ?? defaultDemoProfile.major,
-    academicYear: (data.academic_year ?? defaultDemoProfile.academicYear) as DemoProfile["academicYear"],
-    country: data.country ?? defaultDemoProfile.country,
-    languages: data.languages?.length ? data.languages : defaultDemoProfile.languages,
-    interests: data.preferred_activities?.length ? data.preferred_activities : defaultDemoProfile.interests,
-    preferredActivities: data.preferred_activities?.length ? data.preferred_activities : defaultDemoProfile.preferredActivities,
-    studyStyle: data.study_style ?? defaultDemoProfile.studyStyle,
-    preferredStudyTimes: data.preferred_study_times?.length ? data.preferred_study_times : defaultDemoProfile.preferredStudyTimes,
+    major: data.major ?? defaultStoredProfile.major,
+    academicYear: (data.academic_year ?? defaultStoredProfile.academicYear) as StoredProfile["academicYear"],
+    country: data.country ?? defaultStoredProfile.country,
+    languages: data.languages?.length ? data.languages : defaultStoredProfile.languages,
+    interests: data.preferred_activities?.length ? data.preferred_activities : defaultStoredProfile.interests,
+    preferredActivities: data.preferred_activities?.length ? data.preferred_activities : defaultStoredProfile.preferredActivities,
+    studyStyle: data.study_style ?? defaultStoredProfile.studyStyle,
+    preferredStudyTimes: data.preferred_study_times?.length ? data.preferred_study_times : defaultStoredProfile.preferredStudyTimes,
     studentStatus: studentStatus(data.student_status),
-    bio: data.bio ?? defaultDemoProfile.bio,
+    bio: data.bio ?? defaultStoredProfile.bio,
     connectionTypes: preferences?.length
       ? preferences.map((preference) => preference.connection_type as ConnectionType)
-      : defaultDemoProfile.connectionTypes,
+      : defaultStoredProfile.connectionTypes,
     visibility: {
       country: data.show_country,
       languages: data.show_languages,
       courses: data.show_courses,
       sameUniversityOnly: data.same_university_only
     }
-  } satisfies DemoProfile;
+  } satisfies StoredProfile;
 }
 
-export async function upsertCurrentUserProfile(profile: DemoProfile) {
+export async function upsertCurrentUserProfile(profile: StoredProfile) {
   const supabase = client();
   const user = await currentUser();
   if (!supabase || !user) return;

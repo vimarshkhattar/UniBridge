@@ -68,7 +68,7 @@ export function BuddyJoinForm({ eventId, eventName }: { eventId: string; eventNa
       </div>
       {state.joined && (
         <div className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-          You already joined a group. Choosing another group here will move your demo membership to the selected group.
+          You already joined a group. Choosing another group here will move your membership to the selected group.
         </div>
       )}
       <label className="grid gap-2 text-sm font-medium text-navy">

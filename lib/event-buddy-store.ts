@@ -137,7 +137,7 @@ export function useBuddyState(eventId: string) {
   return { state, updateState };
 }
 
-export function demoBuddyGroups(eventId: string): BuddyGroupDetails[] {
+export function starterBuddyGroups(eventId: string): BuddyGroupDetails[] {
   return [
     {
       id: `${eventId}-calm`,
@@ -165,7 +165,7 @@ export function demoBuddyGroups(eventId: string): BuddyGroupDetails[] {
 export function groupsForEvent(eventId: string, state: BuddyState) {
   const groupsById = new Map<string, BuddyGroupDetails>();
 
-  demoBuddyGroups(eventId).forEach((group) => groupsById.set(group.id, group));
+  starterBuddyGroups(eventId).forEach((group) => groupsById.set(group.id, group));
   state.groups.forEach((group) => groupsById.set(group.id, group));
 
   return Array.from(groupsById.values()).map((group) => (

@@ -6,11 +6,11 @@ import { StudentCard } from "@/components/student-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { calculateMatchScore } from "@/lib/matching";
-import { useDemoProfile } from "@/lib/profile-store";
+import { useStoredProfile } from "@/lib/profile-store";
 import { students } from "@/lib/sample-data";
 
 export default function DiscoverPage() {
-  const { profile } = useDemoProfile();
+  const { profile } = useStoredProfile();
   const [query, setQuery] = useState("");
   const [connectionType, setConnectionType] = useState("All");
   const [studyStyle, setStudyStyle] = useState("All");
