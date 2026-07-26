@@ -14,6 +14,10 @@ const defaultActions: DiscoverActions = {
   savedIds: []
 };
 
+function mergeUniqueIds(localIds: string[], remoteIds: string[]) {
+  return Array.from(new Set([...localIds, ...remoteIds]));
+}
+
 let cachedRaw: string | null = null;
 let cachedActions = defaultActions;
 
@@ -64,7 +68,14 @@ export function useDiscoverActions() {
 
     void import("@/lib/supabase/user-sync").then(async ({ loadRemoteDiscoverActions }) => {
       const remoteActions = await loadRemoteDiscoverActions();
-      if (isActive && remoteActions) saveActions(remoteActions);
+      if (isActive && remoteActions) {
+        const currentActions = readActions();
+
+        saveActions({
+          requestedIds: mergeUniqueIds(currentActions.requestedIds, remoteActions.requestedIds),
+          savedIds: mergeUniqueIds(currentActions.savedIds, remoteActions.savedIds)
+        });
+      }
     });
 
     return () => {

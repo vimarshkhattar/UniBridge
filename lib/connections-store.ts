@@ -7,7 +7,6 @@ export type ConnectionsState = {
   acceptedIds: string[];
   pendingIds: string[];
   declinedIds: string[];
-  sentMessages: Record<string, string[]>;
 };
 
 const STORAGE_KEY = "unibridge.connections";
@@ -16,8 +15,7 @@ const STORE_EVENT = "unibridge-connections-updated";
 const defaultConnections: ConnectionsState = {
   acceptedIds: students.slice(1, 3).map((student) => student.id),
   pendingIds: students.slice(3, 6).map((student) => student.id),
-  declinedIds: [],
-  sentMessages: {}
+  declinedIds: []
 };
 
 let cachedRaw: string | null = null;
@@ -82,16 +80,15 @@ export function useConnectionsState() {
     };
   }, []);
 
-  function acceptRequest(studentId: string) {
+  async function acceptRequest(studentId: string) {
     saveConnections({
       ...state,
       pendingIds: state.pendingIds.filter((id) => id !== studentId),
       declinedIds: state.declinedIds.filter((id) => id !== studentId),
       acceptedIds: state.acceptedIds.includes(studentId) ? state.acceptedIds : [...state.acceptedIds, studentId]
     });
-    void import("@/lib/supabase/user-sync").then(({ acceptRemoteConnectionRequest }) => {
-      void acceptRemoteConnectionRequest(studentId);
-    });
+    const { acceptRemoteConnectionRequest } = await import("@/lib/supabase/user-sync");
+    await acceptRemoteConnectionRequest(studentId);
   }
 
   function declineRequest(studentId: string) {
@@ -106,28 +103,15 @@ export function useConnectionsState() {
     });
   }
 
-  function addMessage(studentId: string, message: string) {
-    saveConnections({
-      ...state,
-      sentMessages: {
-        ...state.sentMessages,
-        [studentId]: [...(state.sentMessages[studentId] ?? []), message]
-      }
-    });
-  }
-
   function removeConnection(studentId: string) {
-    const remainingMessages = Object.fromEntries(Object.entries(state.sentMessages).filter(([id]) => id !== studentId));
-
     saveConnections({
       ...state,
-      acceptedIds: state.acceptedIds.filter((id) => id !== studentId),
-      sentMessages: remainingMessages
+      acceptedIds: state.acceptedIds.filter((id) => id !== studentId)
     });
     void import("@/lib/supabase/user-sync").then(({ removeRemoteConnection }) => {
       void removeRemoteConnection(studentId);
     });
   }
 
-  return { state, acceptRequest, declineRequest, addMessage, removeConnection };
+  return { state, acceptRequest, declineRequest, removeConnection };
 }

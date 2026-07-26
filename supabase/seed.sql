@@ -83,6 +83,24 @@ insert into public.connections (user_a, user_b) values
 ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002')
 on conflict (user_a, user_b) do nothing;
 
+insert into public.connection_messages (connection_id, sender_id, body)
+select c.id, m.sender_id::uuid, m.body
+from public.connections c
+join (values
+('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002','Hi Daniel, nice to connect. Would you like to compare CSE 532 notes this week?'),
+('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001','Sure, I can meet after class or at the library.')
+) as m(sender_id, other_id, body)
+on (
+  (c.user_a = m.sender_id::uuid and c.user_b = m.other_id::uuid)
+  or (c.user_b = m.sender_id::uuid and c.user_a = m.other_id::uuid)
+)
+where not exists (
+  select 1 from public.connection_messages existing
+  where existing.connection_id = c.id
+  and existing.sender_id = m.sender_id::uuid
+  and existing.body = m.body
+);
+
 insert into public.event_buddy_requests (event_id, user_id, note)
 select e.id, p.id::uuid, 'I would like to attend with a small group.'
 from public.events e

@@ -7,8 +7,83 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
 import { formatEventDate } from "@/lib/date-format";
+import { groupsForEvent, useBuddyState } from "@/lib/event-buddy-store";
 import { useEventActivity } from "@/lib/event-activity-store";
 import { events, students } from "@/lib/sample-data";
+
+function EventCard({
+  event,
+  isJoined,
+  needsBuddy,
+  joinEvent,
+  requestBuddy
+}: {
+  event: (typeof events)[number];
+  isJoined: boolean;
+  needsBuddy: boolean;
+  joinEvent: (eventId: string) => void;
+  requestBuddy: (eventId: string) => void;
+}) {
+  const { state: buddyState } = useBuddyState(event.id);
+  const groups = groupsForEvent(event.id, buddyState);
+  const joinedGroup = groups.find((group) => group.id === buddyState.joinedGroupId);
+  const createdGroup = buddyState.groups.find((group) => group.createdByCurrentUser);
+  const groupToShow = createdGroup ?? joinedGroup;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle>{event.name}</CardTitle>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-normal text-red-700">{event.sampleLabel}</p>
+          </div>
+          <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-bold text-amber-900">{event.category}</span>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <p className="text-sm leading-6 text-muted-foreground">{event.description}</p>
+        <div className="grid gap-1 text-sm">
+          <p><span className="font-semibold text-navy">When:</span> {formatEventDate(event.startsAt)}</p>
+          <p><span className="font-semibold text-navy">Where:</span> {event.location}</p>
+          <p><span className="font-semibold text-navy">Organizer:</span> {event.organizer}</p>
+        </div>
+        <div className="grid gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
+          <span>{event.interestedCount + (isJoined ? 1 : 0)} UniBridge students interested</span>
+          <span>{event.buddyCount + (needsBuddy ? 1 : 0)} students looking for a buddy</span>
+          <span>Buddy seekers you might know: {students.slice(1, 4).map((student) => student.fullName.split(" ")[0]).join(", ")}</span>
+        </div>
+        {(isJoined || needsBuddy || groupToShow) && (
+          <div className="grid gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+            {isJoined && (
+              <p><span className="font-semibold">You joined this event.</span> It has been added to your event activity, and the interested count includes you.</p>
+            )}
+            {needsBuddy && (
+              <p><span className="font-semibold">Buddy request active.</span> Other students can see you in this event&apos;s Details page under Students seeking a buddy.</p>
+            )}
+            {groupToShow && (
+              <p>
+                <span className="font-semibold">
+                  {createdGroup ? "You created a buddy group." : "You joined a buddy group."}
+                </span>{" "}
+                {groupToShow.title} is listed in this event&apos;s Details page with {groupToShow.members.length}/{groupToShow.maxMembers} members.
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button onClick={() => joinEvent(event.id)} disabled={isJoined}>
+            <CalendarPlus className="size-4" /> {isJoined ? "Joined" : "Join event"}
+          </Button>
+          <Button variant="secondary" onClick={() => requestBuddy(event.id)} disabled={needsBuddy}>
+            <UsersRound className="size-4" /> {needsBuddy ? "Buddy requested" : "I need a buddy"}
+          </Button>
+          <Link href={`/events/${event.id}`}><Button variant="ghost">Details</Button></Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function EventsPage() {
   const [category, setCategory] = useState("All");
@@ -48,49 +123,14 @@ export default function EventsPage() {
       )}
       <div className="grid gap-5 lg:grid-cols-2">
         {filtered.map((event) => (
-          <Card key={event.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <CardTitle>{event.name}</CardTitle>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-normal text-red-700">{event.sampleLabel}</p>
-                </div>
-                <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-bold text-amber-900">{event.category}</span>
-              </div>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <p className="text-sm leading-6 text-muted-foreground">{event.description}</p>
-              <div className="grid gap-1 text-sm">
-                <p><span className="font-semibold text-navy">When:</span> {formatEventDate(event.startsAt)}</p>
-                <p><span className="font-semibold text-navy">Where:</span> {event.location}</p>
-                <p><span className="font-semibold text-navy">Organizer:</span> {event.organizer}</p>
-              </div>
-              <div className="grid gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
-                <span>{event.interestedCount + (activity.joinedIds.includes(event.id) ? 1 : 0)} UniBridge students interested</span>
-                <span>{event.buddyCount + (activity.buddyIds.includes(event.id) ? 1 : 0)} students looking for a buddy</span>
-                <span>Buddy seekers you might know: {students.slice(1, 4).map((student) => student.fullName.split(" ")[0]).join(", ")}</span>
-              </div>
-              {(activity.joinedIds.includes(event.id) || activity.buddyIds.includes(event.id)) && (
-                <div className="grid gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-                  {activity.joinedIds.includes(event.id) && (
-                    <p><span className="font-semibold">You joined this event.</span> It has been added to your event activity, and the interested count includes you.</p>
-                  )}
-                  {activity.buddyIds.includes(event.id) && (
-                    <p><span className="font-semibold">Buddy request active.</span> Other students can see you in this event&apos;s Details page under Students seeking a buddy.</p>
-                  )}
-                </div>
-              )}
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button onClick={() => joinEvent(event.id)} disabled={activity.joinedIds.includes(event.id)}>
-                  <CalendarPlus className="size-4" /> {activity.joinedIds.includes(event.id) ? "Joined" : "Join event"}
-                </Button>
-                <Button variant="secondary" onClick={() => requestBuddy(event.id)} disabled={activity.buddyIds.includes(event.id)}>
-                  <UsersRound className="size-4" /> {activity.buddyIds.includes(event.id) ? "Buddy requested" : "I need a buddy"}
-                </Button>
-                <Link href={`/events/${event.id}`}><Button variant="ghost">Details</Button></Link>
-              </div>
-            </CardContent>
-          </Card>
+          <EventCard
+            key={event.id}
+            event={event}
+            isJoined={activity.joinedIds.includes(event.id)}
+            needsBuddy={activity.buddyIds.includes(event.id)}
+            joinEvent={joinEvent}
+            requestBuddy={requestBuddy}
+          />
         ))}
       </div>
     </div>

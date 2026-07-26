@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Plus, Trash2, UserMinus, UsersRound } from "lucide-react";
+import { CheckCircle2, Plus, Send, Trash2, UserMinus, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/input";
 import { groupsForEvent, useBuddyState } from "@/lib/event-buddy-store";
 
 export function EventBuddyActions({ eventId, eventName }: { eventId: string; eventName: string }) {
@@ -30,11 +31,13 @@ export function EventBuddyActions({ eventId, eventName }: { eventId: string; eve
 
   function deleteGroup() {
     const nextGroups = state.groups.filter((group) => !group.createdByCurrentUser);
+    const nextMessages = { ...state.groupMessages };
 
     if (createdGroup?.id) {
       void import("@/lib/supabase/user-sync").then(({ deleteRemoteBuddyGroup }) => {
         void deleteRemoteBuddyGroup(createdGroup.id);
       });
+      delete nextMessages[createdGroup.id];
     }
 
     updateState({
@@ -44,7 +47,23 @@ export function EventBuddyActions({ eventId, eventName }: { eventId: string; eve
       joinedGroupId: state.joinedGroupId === createdGroup?.id ? undefined : state.joinedGroupId,
       joinNote: state.joinedGroupId === createdGroup?.id ? undefined : state.joinNote,
       group: undefined,
-      groups: nextGroups
+      groups: nextGroups,
+      groupMessages: nextMessages
+    });
+  }
+
+  function sendGroupMessage(formData: FormData) {
+    if (!state.joinedGroupId) return;
+
+    const message = String(formData.get("groupMessage") ?? "").trim();
+    if (!message) return;
+
+    updateState({
+      ...state,
+      groupMessages: {
+        ...state.groupMessages,
+        [state.joinedGroupId]: [...(state.groupMessages[state.joinedGroupId] ?? []), message]
+      }
     });
   }
 
@@ -92,20 +111,58 @@ export function EventBuddyActions({ eventId, eventName }: { eventId: string; eve
         </div>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Link href={`/events/${eventId}/buddy/create`}>
-          <Button type="button" disabled={state.created}>
-            <Plus className="size-4" aria-hidden />
-            {state.created ? "Group created" : "Create buddy group"}
-          </Button>
-        </Link>
-        <Link href={`/events/${eventId}/buddy/join`}>
-          <Button type="button" variant="secondary" disabled={state.joined}>
-            <UsersRound className="size-4" aria-hidden />
-            {state.joined ? "Joined group" : "Join small group"}
-          </Button>
-        </Link>
-      </div>
+      {state.joined && joinedGroup && (
+        <div className="rounded-md border border-border bg-white p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="font-bold text-navy">{joinedGroup.title} conversation</p>
+              <p className="mt-1 text-sm text-muted-foreground">Use this space to plan where to meet, introduce yourself, and keep the group comfortable.</p>
+            </div>
+            <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-primary">
+              {joinedGroup.members.length}/{joinedGroup.maxMembers} members
+            </span>
+          </div>
+          <div className="mt-4 grid gap-2 rounded-md bg-muted p-3 text-sm">
+            <p className="rounded-md border border-border bg-white p-3 text-muted-foreground">
+              Suggested starter: Hi everyone, I joined this group for {eventName}. Where should we meet before the event?
+            </p>
+            {(state.groupMessages[joinedGroup.id] ?? []).map((message, index) => (
+              <p key={`${message}-${index}`} className="rounded-md border border-red-100 bg-red-50 p-3 text-red-950">
+                <span className="font-semibold">You:</span> {message}
+              </p>
+            ))}
+          </div>
+          <form action={sendGroupMessage} className="mt-4 grid gap-3">
+            <label className="grid gap-2 text-sm font-medium text-navy">
+              Message the group
+              <Textarea name="groupMessage" placeholder="Example: Hi everyone, I can meet near the entrance 10 minutes before it starts." />
+            </label>
+            <div>
+              <Button type="submit">
+                <Send className="size-4" aria-hidden />
+                Send to group
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {!hasGroup && (
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Link href={`/events/${eventId}/buddy/create`}>
+            <Button type="button">
+              <Plus className="size-4" aria-hidden />
+              Create buddy group
+            </Button>
+          </Link>
+          <Link href={`/events/${eventId}/buddy/join`}>
+            <Button type="button" variant="secondary">
+              <UsersRound className="size-4" aria-hidden />
+              Join small group
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

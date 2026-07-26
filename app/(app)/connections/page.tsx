@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { BookmarkX, MessageSquare, Send, Trash2, UserCheck, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,12 +8,17 @@ import { Textarea } from "@/components/ui/input";
 import { useConnectionsState } from "@/lib/connections-store";
 import { useDiscoverActions } from "@/lib/discover-actions-store";
 import { students } from "@/lib/sample-data";
+import type { ConnectionMessage } from "@/lib/supabase/user-sync";
 
 export default function ConnectionsPage() {
-  const { state, acceptRequest, declineRequest, addMessage, removeConnection } = useConnectionsState();
+  const { state, acceptRequest, declineRequest, removeConnection } = useConnectionsState();
   const { actions, cancelRequest, removeSavedProfile } = useDiscoverActions();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [removedName, setRemovedName] = useState("");
+  const [messages, setMessages] = useState<ConnectionMessage[]>([]);
+  const [messageDraft, setMessageDraft] = useState("");
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [messageError, setMessageError] = useState("");
 
   const accepted = useMemo(
     () => state.acceptedIds.map((id) => students.find((student) => student.id === id)).filter(Boolean),
@@ -42,9 +47,21 @@ export default function ConnectionsPage() {
   );
   const activeConversation = students.find((student) => student.id === activeConversationId);
 
-  function handleAcceptRequest(studentId: string) {
-    acceptRequest(studentId);
+  async function openConversation(studentId: string) {
     setActiveConversationId(studentId);
+    setMessages([]);
+    setIsLoadingMessages(true);
+    setMessageError("");
+
+    const { loadRemoteConnectionMessages } = await import("@/lib/supabase/user-sync");
+    const remoteMessages = await loadRemoteConnectionMessages(studentId);
+    setMessages(remoteMessages);
+    setIsLoadingMessages(false);
+  }
+
+  async function handleAcceptRequest(studentId: string) {
+    await acceptRequest(studentId);
+    await openConversation(studentId);
   }
 
   function handleDeclineRequest(studentId: string) {
@@ -58,19 +75,30 @@ export default function ConnectionsPage() {
     if (activeConversationId === studentId) setActiveConversationId(null);
   }
 
-  function sendMessage(formData: FormData) {
+  async function sendMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!activeConversationId) return;
-    const message = String(formData.get("message") ?? "").trim();
+    const message = messageDraft.trim();
     if (!message) return;
 
-    addMessage(activeConversationId, message);
+    setMessageError("");
+    const { sendRemoteConnectionMessage } = await import("@/lib/supabase/user-sync");
+    const savedMessage = await sendRemoteConnectionMessage(activeConversationId, message);
+
+    if (!savedMessage) {
+      setMessageError("Message could not be sent. Make sure this connection is accepted and Supabase is configured.");
+      return;
+    }
+
+    setMessages((currentMessages) => [...currentMessages, savedMessage]);
+    setMessageDraft("");
   }
 
   return (
     <div className="grid gap-6">
       <div>
         <h1 className="text-3xl font-bold text-navy">Connections</h1>
-        <p className="mt-2 text-muted-foreground">Manage accepted connections, pending requests, saved profiles, and low-pressure conversation starters.</p>
+        <p className="mt-2 text-muted-foreground">Manage accepted connections, pending requests, saved profiles, and conversations with people who accepted.</p>
       </div>
 
       {declinedNames.length > 0 && (
@@ -88,7 +116,7 @@ export default function ConnectionsPage() {
         <Card>
           <CardHeader><CardTitle>Accepted connections</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
-            {accepted.length === 0 && <p className="rounded-md bg-muted p-4 text-sm text-muted-foreground">No accepted connections yet. Accept a request to start a conversation.</p>}
+            {accepted.length === 0 && <p className="rounded-md bg-muted p-4 text-sm text-muted-foreground">No accepted connections yet. Once someone accepts, they will appear here and you can start a conversation.</p>}
             {accepted.map((student) => (
               <div key={student!.id} className="grid gap-3 rounded-md border border-border p-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
                 <div className="min-w-0">
@@ -96,7 +124,7 @@ export default function ConnectionsPage() {
                   <p className="text-sm text-muted-foreground">{student!.connectionTypes.slice(0, 2).join(", ")}</p>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9.5rem] xl:w-[25rem]">
-                  <Button variant="secondary" className="w-full whitespace-nowrap" onClick={() => setActiveConversationId(student!.id)}>
+                  <Button variant="secondary" className="w-full whitespace-nowrap" onClick={() => void openConversation(student!.id)}>
                     <MessageSquare className="size-4" /> Start Conversation
                   </Button>
                   <Button variant="danger" className="w-full whitespace-nowrap" onClick={() => handleRemoveConnection(student!.id, student!.fullName)}>
@@ -170,24 +198,38 @@ export default function ConnectionsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Conversation with {activeConversation.fullName}</CardTitle>
-            <p className="text-sm text-muted-foreground">This is a demo conversation area. A production version would save messages in Supabase.</p>
+            <p className="text-sm text-muted-foreground">Messages here are saved in Supabase and visible to both accepted students.</p>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2 rounded-md bg-muted p-4 text-sm">
               <p className="font-semibold text-navy">Suggested opener</p>
               <p className="text-muted-foreground">Hi {activeConversation.fullName.split(" ")[0]}, nice to connect on UniBridge. Would you like to plan a study session or attend a campus event together?</p>
-              {(state.sentMessages[activeConversation.id] ?? []).map((message, index) => (
-                <p key={`${message}-${index}`} className="rounded-md border border-border bg-white p-3 text-foreground">You: {message}</p>
+              {isLoadingMessages && <p className="rounded-md border border-border bg-white p-3 text-muted-foreground">Loading messages...</p>}
+              {!isLoadingMessages && messages.length === 0 && (
+                <p className="rounded-md border border-border bg-white p-3 text-muted-foreground">No messages yet. Send the first message when you are ready.</p>
+              )}
+              {messages.map((message) => (
+                <p key={message.id} className="rounded-md border border-border bg-white p-3 text-foreground">
+                  <span className="font-semibold text-navy">{message.senderName}:</span> {message.body}
+                </p>
               ))}
             </div>
-            <form action={sendMessage} className="grid gap-3">
+            {messageError && (
+              <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-900">{messageError}</p>
+            )}
+            <form onSubmit={sendMessage} className="grid gap-3">
               <label className="grid gap-2 text-sm font-medium text-navy">
                 Message
-                <Textarea name="message" placeholder="Write a short, friendly message..." />
+                <Textarea value={messageDraft} onChange={(event) => setMessageDraft(event.target.value)} placeholder="Write a short, friendly message..." />
               </label>
               <div className="flex gap-2">
                 <Button type="submit"><Send className="size-4" /> Send message</Button>
-                <Button type="button" variant="secondary" onClick={() => setActiveConversationId(null)}>Close</Button>
+                <Button type="button" variant="secondary" onClick={() => {
+                  setActiveConversationId(null);
+                  setMessages([]);
+                  setMessageDraft("");
+                  setMessageError("");
+                }}>Close</Button>
               </div>
             </form>
           </CardContent>

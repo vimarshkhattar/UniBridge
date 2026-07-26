@@ -88,6 +88,14 @@ create table public.connections (
   check (user_a <> user_b)
 );
 
+create table public.connection_messages (
+  id uuid primary key default gen_random_uuid(),
+  connection_id uuid not null references public.connections(id) on delete cascade,
+  sender_id uuid not null references public.profiles(id) on delete cascade,
+  body text not null check (length(trim(body)) > 0 and length(body) <= 2000),
+  created_at timestamptz not null default now()
+);
+
 create table public.saved_profiles (
   saver_id uuid references public.profiles(id) on delete cascade,
   saved_user_id uuid references public.profiles(id) on delete cascade,
@@ -191,6 +199,7 @@ create index profiles_university_idx on public.profiles(university_id);
 create index profiles_major_idx on public.profiles(major);
 create index courses_code_idx on public.courses(code);
 create index events_starts_at_idx on public.events(starts_at);
+create index connection_messages_connection_created_idx on public.connection_messages(connection_id, created_at);
 create index survival_guides_search_idx on public.survival_guides using gin (to_tsvector('english', title || ' ' || summary || ' ' || category));
 create index reports_status_idx on public.reports(status);
 
@@ -203,6 +212,7 @@ alter table public.user_interests enable row level security;
 alter table public.connection_preferences enable row level security;
 alter table public.connection_requests enable row level security;
 alter table public.connections enable row level security;
+alter table public.connection_messages enable row level security;
 alter table public.saved_profiles enable row level security;
 alter table public.events enable row level security;
 alter table public.event_attendees enable row level security;
@@ -243,6 +253,23 @@ create policy "connection request sender delete" on public.connection_requests f
 create policy "connections participants read" on public.connections for select to authenticated using (user_a = auth.uid() or user_b = auth.uid());
 create policy "connections participants insert" on public.connections for insert to authenticated with check (user_a = auth.uid() or user_b = auth.uid());
 create policy "connections participants delete" on public.connections for delete to authenticated using (user_a = auth.uid() or user_b = auth.uid());
+create policy "connection messages participants read" on public.connection_messages for select to authenticated
+using (
+  exists (
+    select 1 from public.connections c
+    where c.id = connection_messages.connection_id
+    and (c.user_a = auth.uid() or c.user_b = auth.uid())
+  )
+);
+create policy "connection messages participants send" on public.connection_messages for insert to authenticated
+with check (
+  sender_id = auth.uid()
+  and exists (
+    select 1 from public.connections c
+    where c.id = connection_messages.connection_id
+    and (c.user_a = auth.uid() or c.user_b = auth.uid())
+  )
+);
 create policy "saved profiles owner" on public.saved_profiles for all to authenticated using (saver_id = auth.uid()) with check (saver_id = auth.uid());
 create policy "event attendees own write" on public.event_attendees for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "event attendees read" on public.event_attendees for select to authenticated using (true);

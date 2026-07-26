@@ -15,6 +15,10 @@ const defaultActivity: EventActivity = {
   buddyIds: []
 };
 
+function mergeUniqueIds(localIds: string[], remoteIds: string[]) {
+  return Array.from(new Set([...localIds, ...remoteIds]));
+}
+
 let cachedRaw: string | null = null;
 let cachedActivity = defaultActivity;
 
@@ -61,7 +65,14 @@ export function useEventActivity() {
 
     void import("@/lib/supabase/user-sync").then(async ({ loadRemoteEventActivity }) => {
       const remoteActivity = await loadRemoteEventActivity();
-      if (isActive && remoteActivity) saveActivity(remoteActivity);
+      if (isActive && remoteActivity) {
+        const currentActivity = readActivity();
+
+        saveActivity({
+          joinedIds: mergeUniqueIds(currentActivity.joinedIds, remoteActivity.joinedIds),
+          buddyIds: mergeUniqueIds(currentActivity.buddyIds, remoteActivity.buddyIds)
+        });
+      }
     });
 
     return () => {

@@ -35,7 +35,8 @@ type ProfileRow = {
 type SavedProfileRow = { saved_user_id: string };
 type SentRequestRow = { receiver_id: string };
 type IncomingRequestRow = { sender_id: string; status: string };
-type ConnectionRow = { user_a: string; user_b: string };
+type ConnectionRow = { id?: string; user_a: string; user_b: string };
+type ConnectionMessageRow = { id: string; sender_id: string; body: string; created_at: string };
 type ProfileIdentityRow = { id: string; email: string | null; full_name: string | null };
 type EventIdentityRow = { id: string; name: string };
 type EventAttendeeRow = { event_id: string; needs_buddy: boolean };
@@ -91,6 +92,21 @@ async function profileIdFromStudentId(studentId: string) {
 
   const { data } = await supabase.from("profiles").select("id").eq("email", email).maybeSingle();
   return data?.id ?? null;
+}
+
+async function connectionIdForStudent(studentId: string) {
+  const supabase = client();
+  const user = await currentUser();
+  const otherUserId = await profileIdFromStudentId(studentId);
+  if (!supabase || !user || !otherUserId) return null;
+
+  const { data } = await supabase
+    .from("connections")
+    .select("id,user_a,user_b")
+    .or(`and(user_a.eq.${user.id},user_b.eq.${otherUserId}),and(user_a.eq.${otherUserId},user_b.eq.${user.id})`)
+    .maybeSingle();
+
+  return (data as ConnectionRow | null)?.id ?? null;
 }
 
 function localStudentIdFromProfile(profile: ProfileIdentityRow) {
@@ -290,6 +306,65 @@ export async function removeRemoteConnection(studentId: string) {
   await supabase.from("connections").delete().or(`and(user_a.eq.${user.id},user_b.eq.${otherUserId}),and(user_a.eq.${otherUserId},user_b.eq.${user.id})`);
 }
 
+export type ConnectionMessage = {
+  id: string;
+  body: string;
+  createdAt: string;
+  senderName: string;
+  isOwn: boolean;
+};
+
+export async function loadRemoteConnectionMessages(studentId: string): Promise<ConnectionMessage[]> {
+  const supabase = client();
+  const user = await currentUser();
+  const connectionId = await connectionIdForStudent(studentId);
+  if (!supabase || !user || !connectionId) return [];
+
+  const otherStudent = students.find((student) => student.id === studentId);
+  const { data } = await supabase
+    .from("connection_messages")
+    .select("id,sender_id,body,created_at")
+    .eq("connection_id", connectionId)
+    .order("created_at", { ascending: true });
+
+  return ((data ?? []) as ConnectionMessageRow[]).map((message) => ({
+    id: message.id,
+    body: message.body,
+    createdAt: message.created_at,
+    senderName: message.sender_id === user.id ? "You" : otherStudent?.fullName ?? "Student",
+    isOwn: message.sender_id === user.id
+  }));
+}
+
+export async function sendRemoteConnectionMessage(studentId: string, body: string): Promise<ConnectionMessage | null> {
+  const supabase = client();
+  const user = await currentUser();
+  const connectionId = await connectionIdForStudent(studentId);
+  const trimmed = body.trim();
+  if (!supabase || !user || !connectionId || !trimmed) return null;
+
+  const { data, error } = await supabase
+    .from("connection_messages")
+    .insert({
+      connection_id: connectionId,
+      sender_id: user.id,
+      body: trimmed
+    })
+    .select("id,sender_id,body,created_at")
+    .single();
+
+  if (error || !data) return null;
+
+  const message = data as ConnectionMessageRow;
+  return {
+    id: message.id,
+    body: message.body,
+    createdAt: message.created_at,
+    senderName: "You",
+    isOwn: true
+  };
+}
+
 export async function loadRemoteDiscoverActions() {
   const supabase = client();
   const user = await currentUser();
@@ -419,7 +494,7 @@ export async function loadRemoteBuddyState(eventId: string): Promise<BuddyState 
 
   const { data: groups } = await supabase.from("event_buddy_groups").select("id,name,basis,description,max_members,meeting_preference,note,created_by").eq("event_id", eventUuid);
   const groupRows = (groups ?? []) as BuddyGroupRow[];
-  if (!groupRows.length) return { created: false, joined: false, groups: [] };
+  if (!groupRows.length) return { created: false, joined: false, groups: [], groupMessages: {} };
 
   const groupIds = groupRows.map((group) => group.id);
   const { data: members } = await supabase.from("event_buddy_group_members").select("group_id,user_id").in("group_id", groupIds);
@@ -451,6 +526,7 @@ export async function loadRemoteBuddyState(eventId: string): Promise<BuddyState 
     joined: Boolean(joinedGroup),
     group: createdGroup,
     groups: buddyGroups,
-    joinedGroupId: joinedGroup?.group_id
+    joinedGroupId: joinedGroup?.group_id,
+    groupMessages: {}
   };
 }

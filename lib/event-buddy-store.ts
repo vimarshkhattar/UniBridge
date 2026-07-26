@@ -21,13 +21,33 @@ export type BuddyState = {
   groups: BuddyGroupDetails[];
   joinedGroupId?: string;
   joinNote?: string;
+  groupMessages: Record<string, string[]>;
 };
 
 const defaultState: BuddyState = {
   created: false,
   joined: false,
-  groups: []
+  groups: [],
+  groupMessages: {}
 };
+
+function mergeGroups(localGroups: BuddyGroupDetails[], remoteGroups: BuddyGroupDetails[]) {
+  const groupsById = new Map<string, BuddyGroupDetails>();
+
+  remoteGroups.forEach((group) => groupsById.set(group.id, group));
+  localGroups.forEach((group) => {
+    const remoteGroup = groupsById.get(group.id);
+
+    groupsById.set(group.id, {
+      ...remoteGroup,
+      ...group,
+      members: Array.from(new Set([...(remoteGroup?.members ?? []), ...(group.members ?? [])])),
+      createdByCurrentUser: group.createdByCurrentUser || remoteGroup?.createdByCurrentUser
+    });
+  });
+
+  return Array.from(groupsById.values());
+}
 
 const cachedBuddyStates = new Map<string, { raw: string | null; state: BuddyState }>();
 
@@ -86,9 +106,21 @@ export function useBuddyState(eventId: string) {
     void import("@/lib/supabase/user-sync").then(async ({ loadRemoteBuddyState }) => {
       const remoteState = await loadRemoteBuddyState(eventId);
       if (isActive && remoteState) {
+        const currentState = readBuddyState(eventId);
+        const groups = mergeGroups(currentState.groups, remoteState.groups);
+        const createdGroup = groups.find((group) => group.createdByCurrentUser);
+
         saveBuddyState(eventId, {
-          ...remoteState,
-          joinNote: readBuddyState(eventId).joinNote
+          created: currentState.created || remoteState.created,
+          joined: currentState.joined || remoteState.joined,
+          group: createdGroup ?? currentState.group ?? remoteState.group,
+          groups,
+          joinedGroupId: currentState.joinedGroupId ?? remoteState.joinedGroupId,
+          joinNote: currentState.joinNote ?? remoteState.joinNote,
+          groupMessages: {
+            ...remoteState.groupMessages,
+            ...currentState.groupMessages
+          }
         });
       }
     });
@@ -160,6 +192,7 @@ function normalizeBuddyState(state: BuddyState): BuddyState {
     ...state,
     groups,
     group: groups.find((group) => group.createdByCurrentUser) ?? state.group,
+    groupMessages: state.groupMessages ?? {},
     joinedGroupId: state.joinedGroupId ?? (state.joined ? groups[0]?.id : undefined)
   };
 }
