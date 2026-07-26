@@ -16,7 +16,7 @@ export async function signUpAction(formData: FormData) {
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/dashboard`
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/auth/callback?next=/dashboard`
     }
   });
 
@@ -48,8 +48,34 @@ export async function forgotPasswordAction(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   if (supabase) {
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/settings`
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/auth/callback?next=/reset-password`
     });
   }
   redirect("/sign-in?message=Check your email for a password reset link.");
+}
+
+export async function updatePasswordAction(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  const supabase = await createSupabaseServerClient();
+
+  if (password.length < 8) {
+    redirect("/reset-password?error=Password must be at least 8 characters.");
+  }
+
+  if (password !== confirmPassword) {
+    redirect("/reset-password?error=Passwords do not match.");
+  }
+
+  if (!supabase) {
+    redirect("/reset-password?error=Authentication is not configured.");
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    redirect(`/reset-password?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect("/sign-in?message=Password updated. Please sign in with your new password.");
 }
