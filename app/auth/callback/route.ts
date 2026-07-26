@@ -5,28 +5,30 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const next = requestUrl.searchParams.get("next") ?? "/dashboard";
-  const redirectTo = new URL(next, requestUrl.origin);
+  const redirectTo = new URL(next.startsWith("/") ? next : "/dashboard", requestUrl.origin);
+
+  function redirectWithError(message: string) {
+    const errorUrl = new URL("/sign-in", requestUrl.origin);
+    errorUrl.searchParams.set("error", message);
+    return NextResponse.redirect(errorUrl);
+  }
 
   if (!code) {
-    redirectTo.pathname = "/sign-in";
-    redirectTo.searchParams.set("error", "Authentication link is missing a code.");
-    return NextResponse.redirect(redirectTo);
+    return redirectWithError("Authentication link is missing a code.");
   }
 
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {
-    redirectTo.pathname = "/sign-in";
-    redirectTo.searchParams.set("error", "Authentication is not configured.");
-    return NextResponse.redirect(redirectTo);
+    return redirectWithError("Authentication is not configured.");
   }
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = await supabase.auth.exchangeCodeForSession(code).catch((exchangeError: unknown) => ({
+    error: exchangeError instanceof Error ? exchangeError : new Error("Could not complete authentication.")
+  }));
 
   if (error) {
-    redirectTo.pathname = "/sign-in";
-    redirectTo.searchParams.set("error", error.message);
-    return NextResponse.redirect(redirectTo);
+    return redirectWithError(error.message);
   }
 
   return NextResponse.redirect(redirectTo);
