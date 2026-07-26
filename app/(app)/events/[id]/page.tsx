@@ -29,7 +29,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           </div>
           <EventBuddySeekers eventId={event.id} />
           <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-            Event data is shaped so a campus events API or approved calendar feed can be added later. This demo does not scrape websites.
+            Event data is shaped so a campus events API or approved calendar feed can be added later. UniBridge does not scrape websites.
           </div>
           <EventBuddyActions eventId={event.id} eventName={event.name} />
         </CardContent>

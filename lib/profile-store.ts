@@ -4,7 +4,8 @@ import { useEffect, useSyncExternalStore } from "react";
 import { currentStudent } from "@/lib/sample-data";
 import type { StudentProfile } from "@/lib/types";
 
-const STORAGE_KEY = "unibridge.demoProfile";
+const STORAGE_KEY = "unibridge.profile";
+const LEGACY_STORAGE_KEY = "unibridge.demoProfile";
 const PROFILE_EVENT = "unibridge-profile-updated";
 
 export type ProfileVisibility = {
@@ -14,11 +15,11 @@ export type ProfileVisibility = {
   sameUniversityOnly: boolean;
 };
 
-export type DemoProfile = StudentProfile & {
+export type StoredProfile = StudentProfile & {
   visibility: ProfileVisibility;
 };
 
-export const defaultDemoProfile: DemoProfile = {
+export const defaultStoredProfile: StoredProfile = {
   ...currentStudent,
   fullName: "Vimarsh Khattar",
   email: "vimarsh.khattar@stonybrook.edu",
@@ -31,7 +32,7 @@ export const defaultDemoProfile: DemoProfile = {
   }
 };
 
-export function calculateProfileCompletion(profile: DemoProfile) {
+export function calculateProfileCompletion(profile: StoredProfile) {
   const checks = [
     profile.fullName,
     profile.email,
@@ -52,28 +53,33 @@ export function calculateProfileCompletion(profile: DemoProfile) {
 }
 
 let cachedRawProfile: string | null = null;
-let cachedProfile: DemoProfile = defaultDemoProfile;
+let cachedProfile: StoredProfile = defaultStoredProfile;
 
-function readProfile(): DemoProfile {
-  if (typeof window === "undefined") return defaultDemoProfile;
+function readProfile(): StoredProfile {
+  if (typeof window === "undefined") return defaultStoredProfile;
 
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const legacyStored = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    const stored = window.localStorage.getItem(STORAGE_KEY) ?? legacyStored;
+    if (!window.localStorage.getItem(STORAGE_KEY) && legacyStored) {
+      window.localStorage.setItem(STORAGE_KEY, legacyStored);
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
     if (stored === cachedRawProfile) return cachedProfile;
     if (!stored) {
       cachedRawProfile = null;
-      cachedProfile = defaultDemoProfile;
+      cachedProfile = defaultStoredProfile;
       return cachedProfile;
     }
     cachedRawProfile = stored;
-    cachedProfile = { ...defaultDemoProfile, ...JSON.parse(stored) };
+    cachedProfile = { ...defaultStoredProfile, ...JSON.parse(stored) };
     return cachedProfile;
   } catch {
-    return defaultDemoProfile;
+    return defaultStoredProfile;
   }
 }
 
-export function saveDemoProfile(profile: DemoProfile) {
+export function saveStoredProfile(profile: StoredProfile) {
   const raw = JSON.stringify(profile);
   window.localStorage.setItem(STORAGE_KEY, raw);
   cachedRawProfile = raw;
@@ -81,7 +87,7 @@ export function saveDemoProfile(profile: DemoProfile) {
   window.dispatchEvent(new CustomEvent(PROFILE_EVENT, { detail: profile }));
 }
 
-export function useDemoProfile() {
+export function useStoredProfile() {
   const profile = useSyncExternalStore(
     (onStoreChange) => {
       window.addEventListener(PROFILE_EVENT, onStoreChange);
@@ -93,7 +99,7 @@ export function useDemoProfile() {
       };
     },
     readProfile,
-    () => defaultDemoProfile
+    () => defaultStoredProfile
   );
 
   useEffect(() => {
@@ -101,7 +107,7 @@ export function useDemoProfile() {
 
     void import("@/lib/supabase/user-sync").then(async ({ loadCurrentUserProfile }) => {
       const remoteProfile = await loadCurrentUserProfile();
-      if (isActive && remoteProfile) saveDemoProfile(remoteProfile);
+      if (isActive && remoteProfile) saveStoredProfile(remoteProfile);
     });
 
     return () => {
@@ -109,8 +115,8 @@ export function useDemoProfile() {
     };
   }, []);
 
-  function updateProfile(nextProfile: DemoProfile) {
-    saveDemoProfile(nextProfile);
+  function updateProfile(nextProfile: StoredProfile) {
+    saveStoredProfile(nextProfile);
     void import("@/lib/supabase/user-sync").then(({ upsertCurrentUserProfile }) => {
       void upsertCurrentUserProfile(nextProfile);
     });

@@ -2,12 +2,12 @@
 
 import { UsersRound } from "lucide-react";
 import { useEventActivity } from "@/lib/event-activity-store";
-import { useDemoProfile } from "@/lib/profile-store";
+import { useStoredProfile } from "@/lib/profile-store";
 import { students } from "@/lib/sample-data";
 
 export function EventBuddySeekers({ eventId }: { eventId: string }) {
   const { activity } = useEventActivity();
-  const { profile } = useDemoProfile();
+  const { profile } = useStoredProfile();
   const userNeedsBuddy = activity.buddyIds.includes(eventId);
   const seekers = students.slice(2, 7);
 
@@ -17,7 +17,7 @@ export function EventBuddySeekers({ eventId }: { eventId: string }) {
       {userNeedsBuddy && (
         <div className="mt-3 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
           <p className="font-semibold">Other students would now see you here.</p>
-          <p className="mt-1">Your buddy request is visible for this event in the demo preview below.</p>
+          <p className="mt-1">Your buddy request is visible for this event in the list below.</p>
         </div>
       )}
       <div className="mt-3 grid gap-2 md:grid-cols-3">

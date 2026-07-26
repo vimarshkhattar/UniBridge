@@ -4,7 +4,7 @@
 
 UniBridge is a student connection and adjustment platform for international university students. It helps students build a useful profile, discover compatible classmates, send connection requests, find event buddies, create small groups, read practical guides, and draft respectful university messages.
 
-The MVP is built for deployment with Supabase, Groq, and Vercel, with Stony Brook-oriented sample content for launch testing.
+UniBridge is built for deployment with Supabase, Groq, and Vercel, with Stony Brook-oriented sample content for launch testing.
 
 ## Screenshots
 
@@ -131,4 +131,4 @@ http://localhost:3000/**
 
 UniBridge is designed around safer student connections. Students should meet in public campus spaces, avoid sharing sensitive personal or financial information, report suspicious behavior, and confirm official university policies with the correct university office.
 
-Sample Stony Brook content is for MVP testing and should not be presented as official university policy.
+Sample Stony Brook content is for launch testing and should not be presented as official university policy.

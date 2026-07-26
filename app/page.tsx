@@ -37,7 +37,7 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_0.86fr] lg:px-8 lg:py-20">
           <div className="flex flex-col justify-center">
             <p className="mb-4 inline-flex w-fit rounded-full border border-red-200 bg-red-50 px-3 py-1 text-sm font-semibold text-red-800">
-              Stony Brook launch MVP for international students
+              Stony Brook launch for international students
             </p>
             <h1 className="max-w-3xl text-5xl font-black tracking-normal text-navy sm:text-6xl">
               Connect. Belong. Succeed.
@@ -158,7 +158,7 @@ export default function LandingPage() {
             <div>
               <h2 className="text-3xl font-bold text-navy">Safety and privacy are part of the product</h2>
               <p className="mt-3 max-w-3xl text-muted-foreground">
-                Meet new people in public campus locations, avoid sharing sensitive personal or financial information, report suspicious behavior, and independently verify housing, rides, or marketplace-style arrangements. Marketplace features are intentionally outside this MVP.
+                Meet new people in public campus locations, avoid sharing sensitive personal or financial information, report suspicious behavior, and independently verify housing, rides, or marketplace-style arrangements. Marketplace features are intentionally outside this launch.
               </p>
             </div>
           </div>
@@ -169,7 +169,7 @@ export default function LandingPage() {
         <h2 className="text-3xl font-bold text-navy">Frequently Asked Questions</h2>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {[
-            ["Is UniBridge only for Stony Brook?", "No. The MVP launches with Stony Brook-oriented sample content, but the schema and profile model support any university."],
+            ["Is UniBridge only for Stony Brook?", "No. UniBridge launches with Stony Brook-oriented sample content, but the schema and profile model support any university."],
             ["Is the verified badge official?", "No. It only means the email domain matches @stonybrook.edu. It is not an endorsement or official university verification."],
             ["Does the communication helper know university rules?", "No. It helps with communication style and structure. Students should confirm policies, deadlines, visa issues, and requirements with official offices."],
             ["Can I hide profile details?", "Yes. Profile privacy controls are part of the protected app experience."]
