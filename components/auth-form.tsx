@@ -36,15 +36,10 @@ export function AuthForm({
       {error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {message && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{message}</p>}
       <Button type="submit">{isSignUp ? "Create account" : "Sign in"}</Button>
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="text-sm text-muted-foreground">
         <Link className="focus-ring rounded-sm hover:text-navy" href={isSignUp ? "/sign-in" : "/sign-up"}>
           {isSignUp ? "Already have an account?" : "Need an account?"}
         </Link>
-        {!isSignUp && (
-          <Link className="focus-ring rounded-sm hover:text-navy" href="/forgot-password">
-            Forgot password?
-          </Link>
-        )}
       </div>
     </form>
   );

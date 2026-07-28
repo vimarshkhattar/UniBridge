@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (providerError) {
-    return redirectWithError(providerError, next === "/reset-password" ? "/forgot-password" : "/sign-in");
+    return redirectWithError(providerError);
   }
 
   if (!code) {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return redirectWithError("Authentication is not configured.", next === "/reset-password" ? "/forgot-password" : "/sign-in");
+    return redirectWithError("Authentication is not configured.");
   }
 
   const response = NextResponse.redirect(redirectTo);
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   }));
 
   if (error) {
-    return redirectWithError(error.message, next === "/reset-password" ? "/forgot-password" : "/sign-in");
+    return redirectWithError(error.message);
   }
 
   return response;
