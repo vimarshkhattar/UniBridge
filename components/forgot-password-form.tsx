@@ -34,7 +34,7 @@ export function ForgotPasswordForm() {
       return;
     }
 
-    setMessage("Check your email for a password reset link. Use the newest email only.");
+    setMessage("Check your email for a password reset link. Use the newest email only because older reset links expire.");
   }
 
   return (
