@@ -24,13 +24,6 @@ Live site: [https://uni-bridge-nu.vercel.app](https://uni-bridge-nu.vercel.app)
 
 ![UniBridge events page](docs/screenshots/events.png)
 
-### Connections
-
-![UniBridge connections page](docs/screenshots/connections.png)
-
-### Communication Helper
-
-![UniBridge communication helper](docs/screenshots/communication-helper.png)
 
 ## Features
 
