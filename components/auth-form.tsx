@@ -40,11 +40,6 @@ export function AuthForm({
         <Link className="focus-ring rounded-sm hover:text-navy" href={isSignUp ? "/sign-in" : "/sign-up"}>
           {isSignUp ? "Already have an account?" : "Need an account?"}
         </Link>
-        {!isSignUp && (
-          <Link className="focus-ring rounded-sm hover:text-navy" href="/forgot-password">
-            Forgot password?
-          </Link>
-        )}
       </div>
     </form>
   );
