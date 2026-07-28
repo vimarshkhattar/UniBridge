@@ -8,14 +8,14 @@ export async function GET(request: NextRequest) {
   const next = requestUrl.searchParams.get("next") ?? "/dashboard";
   const redirectTo = new URL(next.startsWith("/") ? next : "/dashboard", requestUrl.origin);
 
-  function redirectWithError(message: string) {
-    const errorUrl = new URL("/sign-in", requestUrl.origin);
+  function redirectWithError(message: string, pathname = "/sign-in") {
+    const errorUrl = new URL(pathname, requestUrl.origin);
     errorUrl.searchParams.set("error", message);
     return NextResponse.redirect(errorUrl);
   }
 
   if (providerError) {
-    return redirectWithError(providerError);
+    return redirectWithError(providerError, next === "/reset-password" ? "/forgot-password" : "/sign-in");
   }
 
   if (!code) {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return redirectWithError("Authentication is not configured.");
+    return redirectWithError("Authentication is not configured.", next === "/reset-password" ? "/forgot-password" : "/sign-in");
   }
 
   const response = NextResponse.redirect(redirectTo);
@@ -43,10 +43,12 @@ export async function GET(request: NextRequest) {
     }
   });
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = await supabase.auth.exchangeCodeForSession(code).catch((exchangeError: unknown) => ({
+    error: exchangeError instanceof Error ? exchangeError : new Error("Could not complete authentication.")
+  }));
 
   if (error) {
-    return redirectWithError(error.message);
+    return redirectWithError(error.message, next === "/reset-password" ? "/forgot-password" : "/sign-in");
   }
 
   return response;

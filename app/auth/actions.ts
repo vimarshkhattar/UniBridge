@@ -1,7 +1,18 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+async function getAppOrigin() {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+  if (configuredUrl) return configuredUrl;
+
+  const headerStore = await headers();
+  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host") ?? "localhost:3000";
+  const protocol = headerStore.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+  return `${protocol}://${host}`;
+}
 
 export async function signUpAction(formData: FormData) {
   const email = String(formData.get("email") ?? "");
@@ -16,7 +27,7 @@ export async function signUpAction(formData: FormData) {
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/auth/callback?next=/dashboard`
+      emailRedirectTo: `${await getAppOrigin()}/auth/callback?next=/dashboard`
     }
   });
 
@@ -41,4 +52,53 @@ export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
   await supabase?.auth.signOut();
   redirect("/");
+}
+
+export async function forgotPasswordAction(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
+  const supabase = await createSupabaseServerClient();
+
+  if (!email) {
+    redirect("/forgot-password?error=Enter your email address.");
+  }
+
+  if (!supabase) {
+    redirect("/forgot-password?error=Authentication is not configured.");
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${await getAppOrigin()}/auth/callback?next=/reset-password`
+  });
+
+  if (error) {
+    redirect(`/forgot-password?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect("/sign-in?message=Check your email for a password reset link.");
+}
+
+export async function updatePasswordAction(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  const supabase = await createSupabaseServerClient();
+
+  if (password.length < 8) {
+    redirect("/reset-password?error=Password must be at least 8 characters.");
+  }
+
+  if (password !== confirmPassword) {
+    redirect("/reset-password?error=Passwords do not match.");
+  }
+
+  if (!supabase) {
+    redirect("/reset-password?error=Authentication is not configured.");
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    redirect(`/reset-password?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect("/sign-in?message=Password updated. Please sign in with your new password.");
 }
