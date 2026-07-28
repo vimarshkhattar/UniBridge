@@ -11,7 +11,9 @@ export function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [recoveryTokenHash, setRecoveryTokenHash] = useState("");
   const [isReady, setIsReady] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -26,10 +28,17 @@ export function ResetPasswordForm() {
 
       const url = new URL(window.location.href);
       const code = url.searchParams.get("code");
+      const tokenHash = url.searchParams.get("token_hash");
       const providerError = url.searchParams.get("error_description") ?? url.searchParams.get("error");
 
       if (providerError) {
-        setError(providerError);
+        setError("This reset link is invalid or expired. Please request a new reset email and use the newest link.");
+        return;
+      }
+
+      if (tokenHash) {
+        setRecoveryTokenHash(tokenHash);
+        setError("");
         return;
       }
 
@@ -63,6 +72,32 @@ export function ResetPasswordForm() {
       isMounted = false;
     };
   }, []);
+
+  async function handleContinueReset() {
+    setError("");
+
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) {
+      setError("Authentication is not configured.");
+      return;
+    }
+
+    setIsPreparing(true);
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: recoveryTokenHash,
+      type: "recovery"
+    });
+    setIsPreparing(false);
+
+    if (verifyError) {
+      setError("This reset link is invalid or expired. Please request a new reset email and use the newest link.");
+      return;
+    }
+
+    window.history.replaceState({}, document.title, "/reset-password");
+    setRecoveryTokenHash("");
+    setIsReady(true);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -99,6 +134,14 @@ export function ResetPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
+      {recoveryTokenHash && !isReady && (
+        <div className="grid gap-3 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+          <p>Your reset link is ready. Continue to choose a new password.</p>
+          <Button type="button" onClick={handleContinueReset} disabled={isPreparing}>
+            {isPreparing ? "Preparing..." : "Continue reset"}
+          </Button>
+        </div>
+      )}
       <label className="grid gap-2 text-sm font-medium text-navy">
         New password
         <Input
@@ -124,7 +167,9 @@ export function ResetPasswordForm() {
         />
       </label>
       {error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {!error && !isReady && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">Preparing your reset link...</p>}
+      {!error && !isReady && !recoveryTokenHash && (
+        <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">Preparing your reset link...</p>
+      )}
       <Button type="submit" disabled={!isReady || isSubmitting}>
         {isSubmitting ? "Updating..." : "Update password"}
       </Button>
