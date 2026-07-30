@@ -229,6 +229,7 @@ create policy "authenticated read courses" on public.courses for select to authe
 create policy "authenticated read interests" on public.interests for select to authenticated using (true);
 create policy "authenticated read guides" on public.survival_guides for select to authenticated using (true);
 create policy "authenticated read events" on public.events for select to authenticated using (true);
+create policy "authenticated create events" on public.events for insert to authenticated with check (created_by = auth.uid() or created_by is null);
 
 create policy "profiles read discoverable" on public.profiles for select to authenticated
 using (

@@ -9,6 +9,7 @@ import type { ConnectionType } from "@/lib/types";
 type CurrentUser = {
   id: string;
   email?: string;
+  fullName?: string;
 };
 
 type ProfileRow = {
@@ -29,7 +30,7 @@ type ProfileRow = {
   show_languages: boolean;
   show_courses: boolean;
   same_university_only: boolean;
-  universities: { name: string | null } | null;
+  universities: { name: string | null } | { name: string | null }[] | null;
 };
 
 type SavedProfileRow = { saved_user_id: string };
@@ -61,6 +62,10 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
+function universityName(value: ProfileRow["universities"]) {
+  return Array.isArray(value) ? value[0]?.name ?? null : value?.name ?? null;
+}
+
 function client() {
   return createSupabaseBrowserClient();
 }
@@ -71,7 +76,11 @@ async function currentUser(): Promise<CurrentUser | null> {
 
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
-  return { id: data.user.id, email: data.user.email ?? undefined };
+  return {
+    id: data.user.id,
+    email: data.user.email ?? undefined,
+    fullName: typeof data.user.user_metadata?.full_name === "string" ? data.user.user_metadata.full_name : undefined
+  };
 }
 
 async function universityId(name: string) {
@@ -85,6 +94,7 @@ async function universityId(name: string) {
 async function profileIdFromStudentId(studentId: string) {
   const supabase = client();
   if (!supabase) return null;
+  if (isUuid(studentId)) return studentId;
 
   const sampleStudent = students.find((student) => student.id === studentId);
   const email = sampleStudent?.email;
@@ -110,7 +120,7 @@ async function connectionIdForStudent(studentId: string) {
 }
 
 function localStudentIdFromProfile(profile: ProfileIdentityRow) {
-  return students.find((student) => student.email === profile.email)?.id ?? null;
+  return students.find((student) => student.email === profile.email)?.id ?? profile.id;
 }
 
 async function localStudentIdsFromProfileIds(profileIds: string[]) {
@@ -131,7 +141,25 @@ async function eventUuidFromLocalId(eventId: string) {
   if (!event) return null;
 
   const { data } = await supabase.from("events").select("id").eq("name", event.name).maybeSingle();
-  return data?.id ?? null;
+  if (data?.id) return data.id as string;
+
+  const user = await currentUser();
+  const { data: createdEvent } = await supabase
+    .from("events")
+    .insert({
+      name: event.name,
+      description: event.description,
+      starts_at: event.startsAt,
+      location: event.location,
+      category: event.category,
+      organizer: event.organizer,
+      source_label: event.sampleLabel,
+      created_by: user?.id ?? null
+    })
+    .select("id")
+    .maybeSingle();
+
+  return createdEvent?.id ?? null;
 }
 
 function localEventIdFromEvent(event: EventIdentityRow) {
@@ -159,7 +187,19 @@ export async function loadCurrentUserProfile() {
     .eq("id", user.id)
     .maybeSingle<ProfileRow>();
 
-  if (error || !data) return null;
+  if (error) return null;
+
+  if (!data) {
+    const fallbackProfile = {
+      ...defaultStoredProfile,
+      id: user.id,
+      fullName: user.fullName || user.email?.split("@")[0]?.replace(/[._-]/g, " ") || "UniBridge Student",
+      email: user.email ?? defaultStoredProfile.email
+    } satisfies StoredProfile;
+
+    await upsertCurrentUserProfile(fallbackProfile);
+    return fallbackProfile;
+  }
 
   const { data: preferences } = await supabase
     .from("connection_preferences")
@@ -171,7 +211,7 @@ export async function loadCurrentUserProfile() {
     id: data.id,
     fullName: data.full_name,
     email: data.email,
-    university: data.universities?.name ?? defaultStoredProfile.university,
+    university: universityName(data.universities) ?? defaultStoredProfile.university,
     avatarUrl: data.avatar_url ?? undefined,
     major: data.major ?? defaultStoredProfile.major,
     academicYear: (data.academic_year ?? defaultStoredProfile.academicYear) as StoredProfile["academicYear"],
@@ -193,6 +233,60 @@ export async function loadCurrentUserProfile() {
       sameUniversityOnly: data.same_university_only
     }
   } satisfies StoredProfile;
+}
+
+export async function loadRemoteDiscoverProfiles(): Promise<StoredProfile[]> {
+  const supabase = client();
+  const user = await currentUser();
+  if (!supabase || !user) return [];
+
+  await loadCurrentUserProfile();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, avatar_url, major, academic_year, country, languages, preferred_activities, study_style, preferred_study_times, student_status, bio, show_country, show_languages, show_courses, same_university_only, universities(name)");
+
+  if (error || !data) return [];
+
+  const profileRows = data as ProfileRow[];
+  const profileIds = profileRows.map((profile) => profile.id);
+  const { data: preferences } = profileIds.length
+    ? await supabase.from("connection_preferences").select("user_id,connection_type").in("user_id", profileIds)
+    : { data: [] };
+
+  const preferencesByUser = new Map<string, ConnectionType[]>();
+  (preferences ?? []).forEach((row) => {
+    const item = row as { user_id: string; connection_type: ConnectionType };
+    preferencesByUser.set(item.user_id, [...(preferencesByUser.get(item.user_id) ?? []), item.connection_type]);
+  });
+
+  return profileRows.map((profile, index) => ({
+    ...defaultStoredProfile,
+    id: profile.id,
+    fullName: profile.full_name,
+    email: profile.email,
+    university: universityName(profile.universities) ?? defaultStoredProfile.university,
+    avatarColor: students[index % students.length]?.avatarColor ?? defaultStoredProfile.avatarColor,
+    avatarUrl: profile.avatar_url ?? undefined,
+    major: profile.major ?? defaultStoredProfile.major,
+    academicYear: (profile.academic_year ?? defaultStoredProfile.academicYear) as StoredProfile["academicYear"],
+    country: profile.show_country ? profile.country ?? defaultStoredProfile.country : "Hidden",
+    languages: profile.show_languages ? profile.languages ?? [] : [],
+    courses: profile.show_courses ? defaultStoredProfile.courses : [],
+    interests: profile.preferred_activities?.length ? profile.preferred_activities : defaultStoredProfile.interests,
+    preferredActivities: profile.preferred_activities?.length ? profile.preferred_activities : defaultStoredProfile.preferredActivities,
+    studyStyle: profile.study_style ?? defaultStoredProfile.studyStyle,
+    preferredStudyTimes: profile.preferred_study_times?.length ? profile.preferred_study_times : defaultStoredProfile.preferredStudyTimes,
+    studentStatus: studentStatus(profile.student_status),
+    connectionTypes: preferencesByUser.get(profile.id)?.length ? preferencesByUser.get(profile.id)! : defaultStoredProfile.connectionTypes,
+    bio: profile.bio ?? defaultStoredProfile.bio,
+    visibility: {
+      country: profile.show_country,
+      languages: profile.show_languages,
+      courses: profile.show_courses,
+      sameUniversityOnly: profile.same_university_only
+    }
+  }));
 }
 
 export async function upsertCurrentUserProfile(profile: StoredProfile) {
