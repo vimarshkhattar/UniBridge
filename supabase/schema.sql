@@ -303,12 +303,24 @@ create policy "authenticated read guides" on public.survival_guides for select t
 create policy "authenticated read events" on public.events for select to authenticated using (true);
 create policy "authenticated create events" on public.events for insert to authenticated with check (created_by = auth.uid() or created_by is null);
 
+create or replace function public.current_user_university_id()
+returns uuid
+language sql
+security definer
+set search_path = public
+as $$
+  select university_id
+  from public.profiles
+  where id = auth.uid()
+  limit 1;
+$$;
+
 create policy "profiles read discoverable" on public.profiles for select to authenticated
 using (
   id = auth.uid()
   or (
     not exists (select 1 from public.blocks b where b.blocker_id = profiles.id and b.blocked_user_id = auth.uid())
-    and (same_university_only = false or university_id = (select university_id from public.profiles where id = auth.uid()))
+    and (same_university_only = false or university_id = public.current_user_university_id())
   )
 );
 create policy "profiles own insert" on public.profiles for insert to authenticated with check (id = auth.uid());

@@ -112,6 +112,12 @@ If your Supabase project already has users in Authentication, also run:
 
 That file creates missing profile rows for existing users and installs the signup trigger that keeps new users visible in Discover.
 
+If real users exist but Discover is blank, run:
+
+6. `supabase/discover-visibility-fix.sql`
+
+That file refreshes the profile visibility rule used by Discover.
+
 Use `reset.sql` only when you are okay deleting old test data.
 
 In Supabase Authentication URL settings, add:
