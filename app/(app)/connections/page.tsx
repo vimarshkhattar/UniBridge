@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { BookmarkX, MessageSquare, Send, Trash2, UserCheck, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,43 +9,69 @@ import { useConnectionsState } from "@/lib/connections-store";
 import { useDiscoverActions } from "@/lib/discover-actions-store";
 import { students } from "@/lib/sample-data";
 import type { ConnectionMessage } from "@/lib/supabase/user-sync";
+import type { StudentProfile } from "@/lib/types";
+
+function isProfile(profile: StudentProfile | undefined): profile is StudentProfile {
+  return Boolean(profile);
+}
 
 export default function ConnectionsPage() {
   const { state, acceptRequest, declineRequest, removeConnection } = useConnectionsState();
   const { actions, cancelRequest, removeSavedProfile } = useDiscoverActions();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [remoteProfiles, setRemoteProfiles] = useState<StudentProfile[]>([]);
   const [removedName, setRemovedName] = useState("");
   const [messages, setMessages] = useState<ConnectionMessage[]>([]);
   const [messageDraft, setMessageDraft] = useState("");
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [messageError, setMessageError] = useState("");
 
+  useEffect(() => {
+    let isActive = true;
+
+    void import("@/lib/supabase/user-sync").then(async ({ loadRemoteDiscoverProfiles }) => {
+      const profiles = await loadRemoteDiscoverProfiles();
+      if (isActive) setRemoteProfiles(profiles);
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const profileById = useMemo(() => {
+    const profiles = new Map<string, StudentProfile>();
+    students.forEach((student) => profiles.set(student.id, student));
+    remoteProfiles.forEach((profile) => profiles.set(profile.id, profile));
+    return profiles;
+  }, [remoteProfiles]);
+
   const accepted = useMemo(
-    () => state.acceptedIds.map((id) => students.find((student) => student.id === id)).filter(Boolean),
-    [state.acceptedIds]
+    () => state.acceptedIds.map((id) => profileById.get(id)).filter(isProfile),
+    [profileById, state.acceptedIds]
   );
   const pending = useMemo(
-    () => state.pendingIds.map((id) => students.find((student) => student.id === id)).filter(Boolean),
-    [state.pendingIds]
+    () => state.pendingIds.map((id) => profileById.get(id)).filter(isProfile),
+    [profileById, state.pendingIds]
   );
   const outgoing = useMemo(
     () => actions.requestedIds
       .filter((id) => !state.acceptedIds.includes(id))
-      .map((id) => students.find((student) => student.id === id))
-      .filter(Boolean),
-    [actions.requestedIds, state.acceptedIds]
+      .map((id) => profileById.get(id))
+      .filter(isProfile),
+    [actions.requestedIds, profileById, state.acceptedIds]
   );
   const savedProfiles = useMemo(
     () => actions.savedIds
-      .map((id) => students.find((student) => student.id === id))
-      .filter(Boolean),
-    [actions.savedIds]
+      .map((id) => profileById.get(id))
+      .filter(isProfile),
+    [actions.savedIds, profileById]
   );
   const declinedNames = useMemo(
-    () => state.declinedIds.map((id) => students.find((student) => student.id === id)?.fullName).filter(Boolean),
-    [state.declinedIds]
+    () => state.declinedIds.map((id) => profileById.get(id)?.fullName).filter(Boolean),
+    [profileById, state.declinedIds]
   );
-  const activeConversation = students.find((student) => student.id === activeConversationId);
+  const activeConversation = activeConversationId ? profileById.get(activeConversationId) : undefined;
 
   async function openConversation(studentId: string) {
     setActiveConversationId(studentId);
@@ -118,16 +144,16 @@ export default function ConnectionsPage() {
           <CardContent className="grid gap-3">
             {accepted.length === 0 && <p className="rounded-md bg-muted p-4 text-sm text-muted-foreground">No accepted connections yet. Once someone accepts, they will appear here and you can start a conversation.</p>}
             {accepted.map((student) => (
-              <div key={student!.id} className="grid gap-3 rounded-md border border-border p-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+              <div key={student.id} className="grid gap-3 rounded-md border border-border p-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
                 <div className="min-w-0">
-                  <p className="font-semibold text-navy">{student!.fullName}</p>
-                  <p className="text-sm text-muted-foreground">{student!.connectionTypes.slice(0, 2).join(", ")}</p>
+                  <p className="font-semibold text-navy">{student.fullName}</p>
+                  <p className="text-sm text-muted-foreground">{student.connectionTypes.slice(0, 2).join(", ")}</p>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9.5rem] xl:w-[25rem]">
-                  <Button variant="secondary" className="w-full whitespace-nowrap" onClick={() => void openConversation(student!.id)}>
+                  <Button variant="secondary" className="w-full whitespace-nowrap" onClick={() => void openConversation(student.id)}>
                     <MessageSquare className="size-4" /> Start Conversation
                   </Button>
-                  <Button variant="danger" className="w-full whitespace-nowrap" onClick={() => handleRemoveConnection(student!.id, student!.fullName)}>
+                  <Button variant="danger" className="w-full whitespace-nowrap" onClick={() => handleRemoveConnection(student.id, student.fullName)}>
                     <Trash2 className="size-4" /> Remove
                   </Button>
                 </div>
@@ -141,12 +167,12 @@ export default function ConnectionsPage() {
           <CardContent className="grid gap-3">
             {pending.length === 0 && <p className="rounded-md bg-muted p-4 text-sm text-muted-foreground">No pending requests right now.</p>}
             {pending.map((student) => (
-              <div key={student!.id} className="rounded-md border border-border p-3">
-                <p className="font-semibold text-navy">{student!.fullName}</p>
-                <p className="text-sm text-muted-foreground">{student!.bio}</p>
+              <div key={student.id} className="rounded-md border border-border p-3">
+                <p className="font-semibold text-navy">{student.fullName}</p>
+                <p className="text-sm text-muted-foreground">{student.bio}</p>
                 <div className="mt-3 flex gap-2">
-                  <Button onClick={() => handleAcceptRequest(student!.id)}><UserCheck className="size-4" /> Accept</Button>
-                  <Button variant="secondary" onClick={() => handleDeclineRequest(student!.id)}><UserX className="size-4" /> Decline</Button>
+                  <Button onClick={() => handleAcceptRequest(student.id)}><UserCheck className="size-4" /> Accept</Button>
+                  <Button variant="secondary" onClick={() => handleDeclineRequest(student.id)}><UserX className="size-4" /> Decline</Button>
                 </div>
               </div>
             ))}
@@ -159,12 +185,12 @@ export default function ConnectionsPage() {
         <CardContent className="grid gap-3">
           {outgoing.length === 0 && <p className="rounded-md bg-muted p-4 text-sm text-muted-foreground">No outgoing requests right now. Send a request from Discover to track it here.</p>}
           {outgoing.map((student) => (
-            <div key={student!.id} className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+            <div key={student.id} className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="min-w-0">
-                <p className="font-semibold text-navy">{student!.fullName}</p>
+                <p className="font-semibold text-navy">{student.fullName}</p>
                 <p className="text-sm text-muted-foreground">Waiting for them to accept your request.</p>
               </div>
-              <Button variant="secondary" onClick={() => cancelRequest(student!.id)}>Cancel request</Button>
+              <Button variant="secondary" onClick={() => cancelRequest(student.id)}>Cancel request</Button>
             </div>
           ))}
         </CardContent>
@@ -175,18 +201,18 @@ export default function ConnectionsPage() {
         <CardContent className="grid gap-3">
           {savedProfiles.length === 0 && <p className="rounded-md bg-muted p-4 text-sm text-muted-foreground">No saved profiles yet. Save someone from Discover to revisit their profile here.</p>}
           {savedProfiles.map((student) => (
-            <div key={student!.id} className="grid gap-3 rounded-md border border-border p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+            <div key={student.id} className="grid gap-3 rounded-md border border-border p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
               <div className="min-w-0">
-                <p className="font-semibold text-navy">{student!.fullName}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{student!.university} · {student!.major} · {student!.academicYear}</p>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{student!.bio}</p>
+                <p className="font-semibold text-navy">{student.fullName}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{student.university} · {student.major} · {student.academicYear}</p>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">{student.bio}</p>
                 <div className="mt-3 grid gap-1 text-sm">
-                  <p><span className="font-semibold text-navy">Courses:</span> {student!.courses.join(", ")}</p>
-                  <p><span className="font-semibold text-navy">Interests:</span> {student!.interests.join(", ")}</p>
-                  <p><span className="font-semibold text-navy">Looking for:</span> {student!.connectionTypes.join(", ")}</p>
+                  <p><span className="font-semibold text-navy">Courses:</span> {student.courses.join(", ")}</p>
+                  <p><span className="font-semibold text-navy">Interests:</span> {student.interests.join(", ")}</p>
+                  <p><span className="font-semibold text-navy">Looking for:</span> {student.connectionTypes.join(", ")}</p>
                 </div>
               </div>
-              <Button variant="secondary" onClick={() => removeSavedProfile(student!.id)}>
+              <Button variant="secondary" onClick={() => removeSavedProfile(student.id)}>
                 <BookmarkX className="size-4" /> Unsave
               </Button>
             </div>
