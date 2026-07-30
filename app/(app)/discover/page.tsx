@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { StudentCard } from "@/components/student-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { calculateMatchScore } from "@/lib/matching";
 import { useStoredProfile } from "@/lib/profile-store";
+import type { StudentProfile } from "@/lib/types";
 import { students } from "@/lib/sample-data";
 
 export default function DiscoverPage() {
@@ -14,14 +15,39 @@ export default function DiscoverPage() {
   const [query, setQuery] = useState("");
   const [connectionType, setConnectionType] = useState("All");
   const [studyStyle, setStudyStyle] = useState("All");
+  const [remoteProfiles, setRemoteProfiles] = useState<StudentProfile[]>([]);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
 
-  const connectionTypes = Array.from(new Set(students.flatMap((student) => student.connectionTypes)));
-  const studyStyles = Array.from(new Set(students.map((student) => student.studyStyle)));
+  useEffect(() => {
+    let isActive = true;
+
+    void import("@/lib/supabase/user-sync").then(async ({ loadRemoteDiscoverProfiles }) => {
+      const profiles = await loadRemoteDiscoverProfiles();
+      if (isActive) {
+        setRemoteProfiles(profiles);
+        setIsLoadingProfiles(false);
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const discoverProfiles = useMemo(() => {
+    const profilesByEmail = new Map<string, StudentProfile>();
+    students.forEach((student) => profilesByEmail.set(student.email.toLowerCase(), student));
+    remoteProfiles.forEach((student) => profilesByEmail.set(student.email.toLowerCase(), student));
+    return Array.from(profilesByEmail.values());
+  }, [remoteProfiles]);
+
+  const connectionTypes = Array.from(new Set(discoverProfiles.flatMap((student) => student.connectionTypes)));
+  const studyStyles = Array.from(new Set(discoverProfiles.map((student) => student.studyStyle)));
 
   const matches = useMemo(() => {
     const normalized = query.toLowerCase();
-    return students
-      .filter((student) => student.id !== profile.id)
+    return discoverProfiles
+      .filter((student) => student.id !== profile.id && student.email.toLowerCase() !== profile.email.toLowerCase())
       .filter((student) => connectionType === "All" || student.connectionTypes.includes(connectionType as never))
       .filter((student) => studyStyle === "All" || student.studyStyle === studyStyle)
       .filter((student) =>
@@ -32,7 +58,7 @@ export default function DiscoverPage() {
       )
       .map((student) => ({ student, match: calculateMatchScore(profile, student) }))
       .sort((a, b) => b.match.total - a.match.total);
-  }, [connectionType, profile, query, studyStyle]);
+  }, [connectionType, discoverProfiles, profile, query, studyStyle]);
 
   return (
     <div className="grid gap-6">
@@ -68,6 +94,11 @@ export default function DiscoverPage() {
           </label>
         </CardContent>
       </Card>
+      {isLoadingProfiles && (
+        <p className="rounded-md border border-border bg-white p-3 text-sm text-muted-foreground">
+          Loading community profiles from UniBridge...
+        </p>
+      )}
       <div className="grid gap-5 xl:grid-cols-2">
         {matches.map(({ student, match }) => <StudentCard key={student.id} student={student} match={match} />)}
       </div>
