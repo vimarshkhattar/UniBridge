@@ -66,6 +66,10 @@ function universityName(value: ProfileRow["universities"]) {
   return Array.isArray(value) ? value[0]?.name ?? null : value?.name ?? null;
 }
 
+function isSeededDemoProfileId(id: string) {
+  return /^00000000-0000-0000-0000-0000000000\d{2}$/.test(id);
+}
+
 function client() {
   return createSupabaseBrowserClient();
 }
@@ -248,7 +252,7 @@ export async function loadRemoteDiscoverProfiles(): Promise<StoredProfile[]> {
 
   if (error || !data) return [];
 
-  const profileRows = data as ProfileRow[];
+  const profileRows = (data as ProfileRow[]).filter((profile) => !isSeededDemoProfileId(profile.id));
   const profileIds = profileRows.map((profile) => profile.id);
   const { data: preferences } = profileIds.length
     ? await supabase.from("connection_preferences").select("user_id,connection_type").in("user_id", profileIds)

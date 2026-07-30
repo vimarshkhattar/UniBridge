@@ -8,7 +8,6 @@ import { Input, Select } from "@/components/ui/input";
 import { calculateMatchScore } from "@/lib/matching";
 import { useStoredProfile } from "@/lib/profile-store";
 import type { StudentProfile } from "@/lib/types";
-import { students } from "@/lib/sample-data";
 
 export default function DiscoverPage() {
   const { profile } = useStoredProfile();
@@ -34,12 +33,7 @@ export default function DiscoverPage() {
     };
   }, []);
 
-  const discoverProfiles = useMemo(() => {
-    const profilesByEmail = new Map<string, StudentProfile>();
-    students.forEach((student) => profilesByEmail.set(student.email.toLowerCase(), student));
-    remoteProfiles.forEach((student) => profilesByEmail.set(student.email.toLowerCase(), student));
-    return Array.from(profilesByEmail.values());
-  }, [remoteProfiles]);
+  const discoverProfiles = remoteProfiles;
 
   const connectionTypes = Array.from(new Set(discoverProfiles.flatMap((student) => student.connectionTypes)));
   const studyStyles = Array.from(new Set(discoverProfiles.map((student) => student.studyStyle)));
@@ -97,6 +91,11 @@ export default function DiscoverPage() {
       {isLoadingProfiles && (
         <p className="rounded-md border border-border bg-white p-3 text-sm text-muted-foreground">
           Loading community profiles from UniBridge...
+        </p>
+      )}
+      {!isLoadingProfiles && matches.length === 0 && (
+        <p className="rounded-md border border-border bg-white p-4 text-sm text-muted-foreground">
+          No real student profiles found yet. Once students sign up and complete onboarding, they will appear here.
         </p>
       )}
       <div className="grid gap-5 xl:grid-cols-2">
