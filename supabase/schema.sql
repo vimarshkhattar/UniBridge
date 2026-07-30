@@ -31,6 +31,78 @@ create table public.profiles (
   updated_at timestamptz not null default now()
 );
 
+create or replace function public.handle_new_auth_user_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  resolved_university_id uuid;
+  resolved_email text;
+  resolved_name text;
+begin
+  resolved_email := coalesce(new.email, new.id::text || '@unibridge.local');
+
+  select id into resolved_university_id
+  from public.universities
+  where domain is not null
+    and lower(resolved_email) like '%@' || lower(domain)
+  order by length(domain) desc
+  limit 1;
+
+  resolved_name := coalesce(
+    nullif(trim(new.raw_user_meta_data->>'full_name'), ''),
+    nullif(trim(new.raw_user_meta_data->>'name'), ''),
+    nullif(trim(split_part(resolved_email, '@', 1)), ''),
+    'UniBridge Student'
+  );
+
+  insert into public.profiles (
+    id,
+    university_id,
+    full_name,
+    email,
+    languages,
+    preferred_activities,
+    preferred_study_times,
+    bio,
+    show_country,
+    show_languages,
+    show_courses,
+    same_university_only
+  )
+  values (
+    new.id,
+    resolved_university_id,
+    resolved_name,
+    resolved_email,
+    '{}',
+    '{}',
+    '{}',
+    'New UniBridge member. Profile details can be completed from the Profile page.',
+    true,
+    true,
+    true,
+    false
+  )
+  on conflict (id) do update
+  set
+    email = excluded.email,
+    full_name = coalesce(nullif(public.profiles.full_name, ''), excluded.full_name),
+    university_id = coalesce(public.profiles.university_id, excluded.university_id),
+    updated_at = now();
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created_create_profile on auth.users;
+
+create trigger on_auth_user_created_create_profile
+after insert on auth.users
+for each row execute function public.handle_new_auth_user_profile();
+
 create table public.courses (
   id uuid primary key default gen_random_uuid(),
   university_id uuid references public.universities(id),

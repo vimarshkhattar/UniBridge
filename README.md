@@ -106,6 +106,12 @@ Run these files in Supabase SQL Editor in this order:
 3. `supabase/seed.sql`
 4. `supabase/messaging.sql`
 
+If your Supabase project already has users in Authentication, also run:
+
+5. `supabase/profile-auto-create.sql`
+
+That file creates missing profile rows for existing users and installs the signup trigger that keeps new users visible in Discover.
+
 Use `reset.sql` only when you are okay deleting old test data.
 
 In Supabase Authentication URL settings, add:
