@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Bot, CalendarDays, Compass, LayoutDashboard, Settings, UserRound, UsersRound } from "lucide-react";
+import { BookOpen, Bot, CalendarDays, Compass, LayoutDashboard, MessageCircle, Settings, UserRound, UsersRound } from "lucide-react";
 import { signOutAction } from "@/app/auth/actions";
 import { Logo } from "@/components/logo";
 import { NotificationMenu } from "@/components/notification-menu";
@@ -57,6 +57,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         ))}
       </nav>
+      <Link
+        href="/dashboard#campus-chatbot"
+        aria-label="Open campus chatbot"
+        title="Open campus chatbot"
+        className="focus-ring fixed bottom-20 right-5 z-30 grid size-14 place-items-center rounded-full bg-primary text-white shadow-lg shadow-red-200 transition hover:bg-red-800 lg:bottom-6"
+      >
+        <MessageCircle className="size-6" aria-hidden />
+        <span className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-white bg-green-500" aria-hidden />
+      </Link>
     </div>
   );
 }

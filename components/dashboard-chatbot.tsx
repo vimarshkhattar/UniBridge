@@ -91,7 +91,7 @@ export function DashboardChatbot() {
   }
 
   return (
-    <Card className="lg:col-span-3">
+    <Card id="campus-chatbot" className="scroll-mt-24 lg:col-span-3">
       <CardHeader>
         <div className="flex items-center gap-2">
           <span className="grid size-9 place-items-center rounded-md bg-red-50 text-primary">
