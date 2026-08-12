@@ -23,11 +23,14 @@ export default function LandingPage() {
             <a className="focus-ring rounded-sm hover:text-navy" href="#safety">Safety</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/sign-in" className="focus-ring rounded-md px-3 py-2 text-sm font-semibold text-navy hover:bg-muted">
+            <Link href="/sign-in" className="focus-ring hidden rounded-md px-3 py-2 text-sm font-semibold text-navy hover:bg-muted sm:inline-flex">
               Sign in
             </Link>
             <Link href="/sign-up">
-              <Button>Join UniBridge</Button>
+              <Button>
+                <span className="sm:hidden">Join</span>
+                <span className="hidden sm:inline">Join UniBridge</span>
+              </Button>
             </Link>
           </div>
         </div>
@@ -39,7 +42,7 @@ export default function LandingPage() {
             <p className="mb-4 inline-flex w-fit rounded-full border border-red-200 bg-red-50 px-3 py-1 text-sm font-semibold text-red-800">
               Stony Brook launch for international students
             </p>
-            <h1 className="max-w-3xl text-5xl font-black tracking-normal text-navy sm:text-6xl">
+            <h1 className="max-w-3xl text-4xl font-black tracking-normal text-navy sm:text-6xl">
               Connect. Belong. Succeed.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
