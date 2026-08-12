@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Bot, CalendarDays, CheckCircle2, Compass, MessageSquareText, ShieldCheck, UserRound, UsersRound } from "lucide-react";
 import { DashboardChatbot } from "@/components/dashboard-chatbot";
+import { DashboardMessagingDock } from "@/components/dashboard-messaging-dock";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -180,6 +181,7 @@ export default function DashboardPage() {
       <section className="grid gap-5 lg:grid-cols-3">
         <DashboardChatbot />
       </section>
+      <DashboardMessagingDock />
     </div>
   );
 }

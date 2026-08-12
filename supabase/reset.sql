@@ -8,6 +8,7 @@ drop table if exists public.event_buddy_requests cascade;
 drop table if exists public.event_attendees cascade;
 drop table if exists public.events cascade;
 drop table if exists public.saved_profiles cascade;
+drop table if exists public.notifications cascade;
 drop table if exists public.connection_messages cascade;
 drop table if exists public.connections cascade;
 drop table if exists public.connection_requests cascade;

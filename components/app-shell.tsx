@@ -67,7 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         href="/dashboard#campus-chatbot"
         aria-label="Open campus chatbot"
         title="Open campus chatbot"
-        className="focus-ring fixed bottom-24 right-4 z-30 grid size-14 place-items-center rounded-full bg-primary text-white shadow-lg shadow-red-200 transition hover:bg-red-800 sm:right-5 lg:bottom-6"
+        className="focus-ring fixed bottom-40 right-4 z-30 grid size-14 place-items-center rounded-full bg-primary text-white shadow-lg shadow-red-200 transition hover:bg-red-800 sm:right-5 lg:bottom-24"
       >
         <MessageCircle className="size-6" aria-hidden />
         <span className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-white bg-green-500" aria-hidden />
