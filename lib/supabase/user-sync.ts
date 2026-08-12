@@ -114,13 +114,40 @@ async function connectionIdForStudent(studentId: string) {
   const otherUserId = await profileIdFromStudentId(studentId);
   if (!supabase || !user || !otherUserId) return null;
 
+  const existingConnectionId = await findConnectionId(user.id, otherUserId);
+  if (existingConnectionId) return existingConnectionId;
+
+  const { data: acceptedRequests } = await supabase
+    .from("connection_requests")
+    .select("sender_id")
+    .eq("status", "accepted")
+    .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
+    .limit(1);
+
+  if (!acceptedRequests?.length) return null;
+
+  const [userA, userB] = [user.id, otherUserId].sort();
+  const { data: createdConnection } = await supabase
+    .from("connections")
+    .insert({ user_a: userA, user_b: userB })
+    .select("id,user_a,user_b")
+    .maybeSingle();
+
+  return (createdConnection as ConnectionRow | null)?.id ?? await findConnectionId(user.id, otherUserId);
+}
+
+async function findConnectionId(currentUserId: string, otherUserId: string) {
+  const supabase = client();
+  if (!supabase) return null;
+
   const { data } = await supabase
     .from("connections")
     .select("id,user_a,user_b")
-    .or(`and(user_a.eq.${user.id},user_b.eq.${otherUserId}),and(user_a.eq.${otherUserId},user_b.eq.${user.id})`)
-    .maybeSingle();
+    .or(`and(user_a.eq.${currentUserId},user_b.eq.${otherUserId}),and(user_a.eq.${otherUserId},user_b.eq.${currentUserId})`)
+    .order("created_at", { ascending: true })
+    .limit(1);
 
-  return (data as ConnectionRow | null)?.id ?? null;
+  return ((data ?? []) as ConnectionRow[])[0]?.id ?? null;
 }
 
 function localStudentIdFromProfile(profile: ProfileIdentityRow) {
@@ -383,7 +410,7 @@ export async function acceptRemoteConnectionRequest(studentId: string) {
   if (!supabase || !user || !senderId) return;
 
   await supabase.from("connection_requests").update({ status: "accepted" }).eq("sender_id", senderId).eq("receiver_id", user.id);
-  await supabase.from("connections").upsert({ user_a: user.id, user_b: senderId });
+  await connectionIdForStudent(studentId);
 }
 
 export async function declineRemoteConnectionRequest(studentId: string) {
@@ -460,6 +487,39 @@ export async function sendRemoteConnectionMessage(studentId: string, body: strin
     createdAt: message.created_at,
     senderName: "You",
     isOwn: true
+  };
+}
+
+export async function subscribeToRemoteConnectionMessages(
+  studentId: string,
+  onMessage: (message: ConnectionMessage) => void
+): Promise<() => void> {
+  const supabase = client();
+  const user = await currentUser();
+  const connectionId = await connectionIdForStudent(studentId);
+  if (!supabase || !user || !connectionId) return () => {};
+
+  const otherStudent = students.find((student) => student.id === studentId);
+  const channel = supabase
+    .channel(`connection-messages-${connectionId}`)
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "connection_messages", filter: `connection_id=eq.${connectionId}` },
+      (payload) => {
+        const message = payload.new as ConnectionMessageRow;
+        onMessage({
+          id: message.id,
+          body: message.body,
+          createdAt: message.created_at,
+          senderName: message.sender_id === user.id ? "You" : otherStudent?.fullName ?? "Student",
+          isOwn: message.sender_id === user.id
+        });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    void supabase.removeChannel(channel);
   };
 }
 

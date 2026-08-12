@@ -11,6 +11,20 @@ create index if not exists connection_messages_connection_created_idx
 
 alter table public.connection_messages enable row level security;
 
+insert into public.connections (user_a, user_b)
+select least(sender_id, receiver_id), greatest(sender_id, receiver_id)
+from public.connection_requests
+where status = 'accepted'
+on conflict (user_a, user_b) do nothing;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.connection_messages;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end $$;
+
 drop policy if exists "connection messages participants read" on public.connection_messages;
 drop policy if exists "connection messages participants send" on public.connection_messages;
 
