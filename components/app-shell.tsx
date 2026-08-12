@@ -11,7 +11,7 @@ const navItems = [
   { href: "/events", label: "Events", mobileLabel: "Events", icon: CalendarDays },
   { href: "/assistant", label: "Communication Helper", mobileLabel: "Helper", icon: Bot },
   { href: "/guides", label: "Guides", mobileLabel: "Guides", icon: BookOpen },
-  { href: "/connections", label: "Connections", mobileLabel: "Network", icon: UsersRound },
+  { href: "/connections", label: "Connections", mobileLabel: "Connections", icon: UsersRound },
   { href: "/profile", label: "Profile", mobileLabel: "Profile", icon: UserRound },
   { href: "/settings", label: "Settings", mobileLabel: "Settings", icon: Settings }
 ];

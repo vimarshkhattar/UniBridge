@@ -29,8 +29,8 @@ export async function proxy(request: NextRequest) {
 
   if (!user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
-    url.searchParams.set("next", request.nextUrl.pathname);
+    url.pathname = "/";
+    url.search = "";
     return NextResponse.redirect(url);
   }
 
