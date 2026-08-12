@@ -38,6 +38,15 @@ type SentRequestRow = { receiver_id: string };
 type IncomingRequestRow = { sender_id: string; status: string };
 type ConnectionRow = { id?: string; user_a: string; user_b: string };
 type ConnectionMessageRow = { id: string; sender_id: string; body: string; created_at: string };
+type NotificationRow = {
+  id: string;
+  title: string;
+  body: string;
+  href: string | null;
+  kind: string;
+  read_at: string | null;
+  created_at: string;
+};
 type ProfileIdentityRow = { id: string; email: string | null; full_name: string | null };
 type EventIdentityRow = { id: string; name: string };
 type EventAttendeeRow = { event_id: string; needs_buddy: boolean };
@@ -439,6 +448,28 @@ export type ConnectionMessage = {
   isOwn: boolean;
 };
 
+export type AppNotification = {
+  id: string;
+  title: string;
+  body: string;
+  href: string;
+  kind: string;
+  createdAt: string;
+  isRead: boolean;
+};
+
+function mapNotification(row: NotificationRow): AppNotification {
+  return {
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    href: row.href ?? "/connections",
+    kind: row.kind,
+    createdAt: row.created_at,
+    isRead: Boolean(row.read_at)
+  };
+}
+
 export async function loadRemoteConnectionMessages(studentId: string): Promise<ConnectionMessage[]> {
   const supabase = client();
   const user = await currentUser();
@@ -514,6 +545,61 @@ export async function subscribeToRemoteConnectionMessages(
           senderName: message.sender_id === user.id ? "You" : otherStudent?.fullName ?? "Student",
           isOwn: message.sender_id === user.id
         });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    void supabase.removeChannel(channel);
+  };
+}
+
+export async function loadRemoteNotifications(): Promise<AppNotification[]> {
+  const supabase = client();
+  const user = await currentUser();
+  if (!supabase || !user) return [];
+
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("id,title,body,href,kind,read_at,created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) return [];
+  return ((data ?? []) as NotificationRow[]).map(mapNotification);
+}
+
+export async function markRemoteNotificationsRead(notificationIds?: string[]) {
+  const supabase = client();
+  const user = await currentUser();
+  if (!supabase || !user) return;
+
+  let query = supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+
+  if (notificationIds?.length) {
+    query = query.in("id", notificationIds);
+  }
+
+  await query;
+}
+
+export async function subscribeToRemoteNotifications(onNotification: (notification: AppNotification) => void): Promise<() => void> {
+  const supabase = client();
+  const user = await currentUser();
+  if (!supabase || !user) return () => {};
+
+  const channel = supabase
+    .channel(`notifications-${user.id}`)
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+      (payload) => {
+        onNotification(mapNotification(payload.new as NotificationRow));
       }
     )
     .subscribe();
