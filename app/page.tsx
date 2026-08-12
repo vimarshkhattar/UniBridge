@@ -23,8 +23,14 @@ export default function LandingPage() {
             <a className="focus-ring rounded-sm hover:text-navy" href="#safety">Safety</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/connections">
-              <Button>Connections</Button>
+            <Link href="/sign-in" className="focus-ring hidden rounded-md px-3 py-2 text-sm font-semibold text-navy hover:bg-muted sm:inline-flex">
+              Sign in
+            </Link>
+            <Link href="/sign-up">
+              <Button>
+                <span className="sm:hidden">Join</span>
+                <span className="hidden sm:inline">Join UniBridge</span>
+              </Button>
             </Link>
           </div>
         </div>
