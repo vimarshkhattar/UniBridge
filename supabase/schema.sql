@@ -296,6 +296,14 @@ alter table public.ai_assistant_history enable row level security;
 alter table public.reports enable row level security;
 alter table public.blocks enable row level security;
 
+do $$
+begin
+  alter publication supabase_realtime add table public.connection_messages;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end $$;
+
 create policy "authenticated read universities" on public.universities for select to authenticated using (true);
 create policy "authenticated read courses" on public.courses for select to authenticated using (true);
 create policy "authenticated read interests" on public.interests for select to authenticated using (true);

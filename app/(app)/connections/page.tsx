@@ -102,6 +102,33 @@ export default function ConnectionsPage() {
     setIsLoadingMessages(false);
   }
 
+  useEffect(() => {
+    if (!activeConversationId) return;
+
+    let cleanup: (() => void) | undefined;
+    let isActive = true;
+
+    void import("@/lib/supabase/user-sync").then(async ({ subscribeToRemoteConnectionMessages }) => {
+      const unsubscribe = await subscribeToRemoteConnectionMessages(activeConversationId, (message) => {
+        setMessages((currentMessages) => {
+          if (currentMessages.some((currentMessage) => currentMessage.id === message.id)) return currentMessages;
+          return [...currentMessages, message];
+        });
+      });
+
+      if (isActive) {
+        cleanup = unsubscribe;
+      } else {
+        unsubscribe();
+      }
+    });
+
+    return () => {
+      isActive = false;
+      cleanup?.();
+    };
+  }, [activeConversationId]);
+
   async function handleAcceptRequest(studentId: string) {
     await acceptRequest(studentId);
     await openConversation(studentId);
@@ -133,7 +160,10 @@ export default function ConnectionsPage() {
       return;
     }
 
-    setMessages((currentMessages) => [...currentMessages, savedMessage]);
+    setMessages((currentMessages) => {
+      if (currentMessages.some((currentMessage) => currentMessage.id === savedMessage.id)) return currentMessages;
+      return [...currentMessages, savedMessage];
+    });
     setMessageDraft("");
   }
 
