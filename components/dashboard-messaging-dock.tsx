@@ -69,17 +69,34 @@ export function DashboardMessagingDock() {
   }, [remoteProfiles]);
 
   const accepted = useMemo(() => state.acceptedIds.map((id) => profileById.get(id)).filter(isProfile), [profileById, state.acceptedIds]);
+  const searchQuery = search.trim().toLowerCase();
+  const activeConversation = activeConversationId ? profileById.get(activeConversationId) : undefined;
+
+  const activeMessagesMatchSearch = useMemo(() => {
+    if (!searchQuery || !activeConversationId) return false;
+
+    return messages.some((message) => [message.senderName, message.body].join(" ").toLowerCase().includes(searchQuery));
+  }, [activeConversationId, messages, searchQuery]);
 
   const filteredAccepted = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return accepted;
+    if (!searchQuery) return accepted;
 
-    return accepted.filter((student) =>
-      [student.fullName, student.major, student.university, ...student.connectionTypes].join(" ").toLowerCase().includes(query)
+    const matches = accepted.filter((student) =>
+      [student.fullName, student.major, student.university, ...student.connectionTypes].join(" ").toLowerCase().includes(searchQuery)
     );
-  }, [accepted, search]);
 
-  const activeConversation = activeConversationId ? profileById.get(activeConversationId) : filteredAccepted[0];
+    if (activeMessagesMatchSearch && activeConversation && !matches.some((student) => student.id === activeConversation.id)) {
+      return [activeConversation, ...matches];
+    }
+
+    return matches;
+  }, [accepted, activeConversation, activeMessagesMatchSearch, searchQuery]);
+
+  const visibleMessages = useMemo(() => {
+    if (!searchQuery) return messages;
+
+    return messages.filter((message) => [message.senderName, message.body].join(" ").toLowerCase().includes(searchQuery));
+  }, [messages, searchQuery]);
 
   async function openConversation(studentId: string) {
     setExpanded(true);
@@ -101,6 +118,16 @@ export function DashboardMessagingDock() {
     }
 
     setExpanded(true);
+  }
+
+  function startNewMessage() {
+    setExpanded(true);
+    setSearch("");
+    setActiveConversationId(null);
+    setMessages([]);
+    setMessageDraft("");
+    setMessageError("");
+    setIsLoadingMessages(false);
   }
 
   function toggleDock() {
@@ -177,7 +204,7 @@ export function DashboardMessagingDock() {
           <Button type="button" variant="ghost" className="size-9 px-0" aria-label="More messaging options">
             <MoreHorizontal className="size-4" aria-hidden />
           </Button>
-          <Button type="button" variant="ghost" className="size-9 px-0" aria-label="New message" onClick={openDock}>
+          <Button type="button" variant="ghost" className="size-9 px-0" aria-label="Start a new message" onClick={startNewMessage}>
             <SquarePen className="size-4" aria-hidden />
           </Button>
           <Button
@@ -254,7 +281,10 @@ export function DashboardMessagingDock() {
                           No messages yet. Say hi to {activeConversation.fullName.split(" ")[0]}.
                         </p>
                       )}
-                      {messages.map((message) => (
+                      {!isLoadingMessages && messages.length > 0 && searchQuery && visibleMessages.length === 0 && (
+                        <p className="rounded-md bg-white p-3 text-sm text-muted-foreground">No messages in this conversation match your search.</p>
+                      )}
+                      {visibleMessages.map((message) => (
                         <div
                           key={message.id}
                           className={cn(
