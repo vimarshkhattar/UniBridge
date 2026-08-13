@@ -40,11 +40,14 @@ function formatMessageTime(value?: string) {
 export function DashboardMessagingDock() {
   const { state } = useConnectionsState();
   const [expanded, setExpanded] = useState(false);
+  const [conversationTab, setConversationTab] = useState<"focused" | "other">("focused");
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [remoteProfiles, setRemoteProfiles] = useState<StudentProfile[]>([]);
   const [messages, setMessages] = useState<ConnectionMessage[]>([]);
   const [messageDraft, setMessageDraft] = useState("");
   const [messageError, setMessageError] = useState("");
+  const [dockNotice, setDockNotice] = useState("");
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -100,6 +103,9 @@ export function DashboardMessagingDock() {
 
   async function openConversation(studentId: string) {
     setExpanded(true);
+    setConversationTab("focused");
+    setOptionsOpen(false);
+    setDockNotice("");
     setActiveConversationId(studentId);
     setMessages([]);
     setIsLoadingMessages(true);
@@ -122,6 +128,9 @@ export function DashboardMessagingDock() {
 
   function startNewMessage() {
     setExpanded(true);
+    setConversationTab("focused");
+    setOptionsOpen(false);
+    setDockNotice("");
     setSearch("");
     setActiveConversationId(null);
     setMessages([]);
@@ -133,10 +142,27 @@ export function DashboardMessagingDock() {
   function toggleDock() {
     if (expanded) {
       setExpanded(false);
+      setOptionsOpen(false);
       return;
     }
 
     openDock();
+  }
+
+  function toggleOptions() {
+    setExpanded(true);
+    setOptionsOpen((isOpen) => !isOpen);
+  }
+
+  function clearMessageSearch() {
+    setSearch("");
+    setOptionsOpen(false);
+    setDockNotice("Search cleared.");
+  }
+
+  function markMessagesRead() {
+    setOptionsOpen(false);
+    setDockNotice("Messaging notifications marked read for this session.");
   }
 
   useEffect(() => {
@@ -200,10 +226,26 @@ export function DashboardMessagingDock() {
           <ProfileAvatar profile={accepted[0]} size="sm" />
           <span className="truncate text-lg font-bold text-navy">Messaging</span>
         </button>
-        <div className="flex items-center gap-1">
-          <Button type="button" variant="ghost" className="size-9 px-0" aria-label="More messaging options">
+        <div className="relative flex items-center gap-1">
+          <Button type="button" variant="ghost" className="size-9 px-0" aria-label="More messaging options" onClick={toggleOptions}>
             <MoreHorizontal className="size-4" aria-hidden />
           </Button>
+          {optionsOpen && (
+            <div className="absolute right-16 top-11 z-50 w-52 overflow-hidden rounded-md border border-border bg-white py-1 text-sm font-semibold text-navy shadow-xl">
+              <button type="button" className="block w-full px-3 py-2 text-left hover:bg-muted" onClick={startNewMessage}>
+                New message
+              </button>
+              <button type="button" className="block w-full px-3 py-2 text-left hover:bg-muted" onClick={clearMessageSearch}>
+                Clear search
+              </button>
+              <button type="button" className="block w-full px-3 py-2 text-left hover:bg-muted" onClick={markMessagesRead}>
+                Mark messages read
+              </button>
+              <a className="block px-3 py-2 text-left hover:bg-muted" href="/connections">
+                Open connections page
+              </a>
+            </div>
+          )}
           <Button type="button" variant="ghost" className="size-9 px-0" aria-label="Start a new message" onClick={startNewMessage}>
             <SquarePen className="size-4" aria-hidden />
           </Button>
@@ -232,96 +274,134 @@ export function DashboardMessagingDock() {
               />
               <SlidersHorizontal className="size-5 shrink-0 text-muted-foreground" aria-hidden />
             </div>
+            {dockNotice && <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-xs font-medium text-primary">{dockNotice}</p>}
           </div>
 
           <div className="grid grid-cols-2 border-b border-border text-center text-sm font-bold">
-            <button type="button" className="border-b-2 border-primary py-2 text-primary">Focused</button>
-            <button type="button" className="py-2 text-muted-foreground">Other</button>
-          </div>
-
-          <div className="grid min-h-0 md:grid-cols-[13rem_minmax(0,1fr)]">
-            <aside className="max-h-56 overflow-y-auto border-b border-border md:max-h-[32rem] md:border-b-0 md:border-r">
-              {filteredAccepted.length === 0 && <p className="p-4 text-sm text-muted-foreground">No matching conversations.</p>}
-              {filteredAccepted.map((student) => {
-                const isActive = activeConversation?.id === student.id;
-
-                return (
-                  <button
-                    key={student.id}
-                    type="button"
-                    onClick={() => void openConversation(student.id)}
-                    className={cn("flex w-full gap-2 border-b border-border px-3 py-3 text-left transition hover:bg-muted", isActive && "bg-red-50")}
-                  >
-                    <ProfileAvatar profile={student} size="sm" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-bold text-navy">{student.fullName}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{student.connectionTypes.slice(0, 2).join(", ")}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </aside>
-
-            <div className="flex min-h-[24rem] flex-col">
-              {activeConversation ? (
-                <>
-                  <div className="flex items-center gap-2 border-b border-border px-3 py-3">
-                    <ProfileAvatar profile={activeConversation} size="sm" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-navy">{activeConversation.fullName}</p>
-                      <p className="truncate text-xs text-muted-foreground">{activeConversation.major}</p>
-                    </div>
-                  </div>
-
-                  <div className="min-h-0 flex-1 overflow-y-auto bg-[#f3f2ef] p-3">
-                    <div className="grid gap-2">
-                      {isLoadingMessages && <p className="rounded-md bg-white p-3 text-sm text-muted-foreground">Loading messages...</p>}
-                      {!isLoadingMessages && messages.length === 0 && (
-                        <p className="rounded-md bg-white p-3 text-sm text-muted-foreground">
-                          No messages yet. Say hi to {activeConversation.fullName.split(" ")[0]}.
-                        </p>
-                      )}
-                      {!isLoadingMessages && messages.length > 0 && searchQuery && visibleMessages.length === 0 && (
-                        <p className="rounded-md bg-white p-3 text-sm text-muted-foreground">No messages in this conversation match your search.</p>
-                      )}
-                      {visibleMessages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={cn(
-                            "max-w-[86%] rounded-2xl px-3 py-2 text-sm shadow-sm",
-                            message.isOwn ? "ml-auto rounded-br-md bg-primary text-white" : "mr-auto rounded-bl-md border border-border bg-white text-foreground"
-                          )}
-                        >
-                          <p className={cn("text-[11px] font-semibold", message.isOwn ? "text-white/80" : "text-muted-foreground")}>{message.senderName}</p>
-                          <p className="mt-1 whitespace-pre-line leading-5">{message.body}</p>
-                          <p className={cn("mt-1 text-right text-[10px]", message.isOwn ? "text-white/75" : "text-muted-foreground")}>
-                            {formatMessageTime(message.createdAt)}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <form onSubmit={sendMessage} className="border-t border-border p-3">
-                    {messageError && <p className="mb-2 rounded-md border border-red-200 bg-red-50 p-2 text-xs font-medium text-red-900">{messageError}</p>}
-                    <Textarea
-                      value={messageDraft}
-                      onChange={(event) => setMessageDraft(event.target.value)}
-                      placeholder="Write a reply..."
-                      className="min-h-20 resize-none text-sm"
-                    />
-                    <div className="mt-2 flex justify-end">
-                      <Button type="submit" className="h-9 px-3 text-xs">
-                        <Send className="size-4" /> Send
-                      </Button>
-                    </div>
-                  </form>
-                </>
-              ) : (
-                <div className="grid flex-1 place-items-center p-4 text-center text-sm text-muted-foreground">Pick a connection to message.</div>
+            <button
+              type="button"
+              className={cn(
+                "border-b-2 py-2",
+                conversationTab === "focused" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
               )}
-            </div>
+              onClick={() => {
+                setConversationTab("focused");
+                setOptionsOpen(false);
+              }}
+            >
+              Focused
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "border-b-2 py-2",
+                conversationTab === "other" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
+              )}
+              onClick={() => {
+                setConversationTab("other");
+                setOptionsOpen(false);
+              }}
+            >
+              Other
+            </button>
           </div>
+
+          {conversationTab === "other" ? (
+            <div className="grid min-h-[24rem] place-items-center p-6 text-center">
+              <div className="max-w-xs">
+                <p className="text-sm font-bold text-navy">No other conversations yet.</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Accepted student chats stay in Focused. Future archived or filtered conversations can appear here.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid min-h-0 md:grid-cols-[13rem_minmax(0,1fr)]">
+              <aside className="max-h-56 overflow-y-auto border-b border-border md:max-h-[32rem] md:border-b-0 md:border-r">
+                {filteredAccepted.length === 0 && <p className="p-4 text-sm text-muted-foreground">No matching conversations.</p>}
+                {filteredAccepted.map((student) => {
+                  const isActive = activeConversation?.id === student.id;
+
+                  return (
+                    <button
+                      key={student.id}
+                      type="button"
+                      onClick={() => void openConversation(student.id)}
+                      className={cn("flex w-full gap-2 border-b border-border px-3 py-3 text-left transition hover:bg-muted", isActive && "bg-red-50")}
+                    >
+                      <ProfileAvatar profile={student} size="sm" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-bold text-navy">{student.fullName}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{student.connectionTypes.slice(0, 2).join(", ")}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </aside>
+
+              <div className="flex min-h-[24rem] flex-col">
+                {activeConversation ? (
+                  <>
+                    <div className="flex items-center gap-2 border-b border-border px-3 py-3">
+                      <ProfileAvatar profile={activeConversation} size="sm" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-navy">{activeConversation.fullName}</p>
+                        <p className="truncate text-xs text-muted-foreground">{activeConversation.major}</p>
+                      </div>
+                    </div>
+
+                    <div className="min-h-0 flex-1 overflow-y-auto bg-[#f3f2ef] p-3">
+                      <div className="grid gap-2">
+                        {isLoadingMessages && <p className="rounded-md bg-white p-3 text-sm text-muted-foreground">Loading messages...</p>}
+                        {!isLoadingMessages && messages.length === 0 && (
+                          <p className="rounded-md bg-white p-3 text-sm text-muted-foreground">
+                            No messages yet. Say hi to {activeConversation.fullName.split(" ")[0]}.
+                          </p>
+                        )}
+                        {!isLoadingMessages && messages.length > 0 && searchQuery && visibleMessages.length === 0 && (
+                          <p className="rounded-md bg-white p-3 text-sm text-muted-foreground">No messages in this conversation match your search.</p>
+                        )}
+                        {visibleMessages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={cn(
+                              "max-w-[86%] rounded-2xl px-3 py-2 text-sm shadow-sm",
+                              message.isOwn ? "ml-auto rounded-br-md bg-primary text-white" : "mr-auto rounded-bl-md border border-border bg-white text-foreground"
+                            )}
+                          >
+                            <p className={cn("text-[11px] font-semibold", message.isOwn ? "text-white/80" : "text-muted-foreground")}>
+                              {message.senderName}
+                            </p>
+                            <p className="mt-1 whitespace-pre-line leading-5">{message.body}</p>
+                            <p className={cn("mt-1 text-right text-[10px]", message.isOwn ? "text-white/75" : "text-muted-foreground")}>
+                              {formatMessageTime(message.createdAt)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <form onSubmit={sendMessage} className="border-t border-border p-3">
+                      {messageError && <p className="mb-2 rounded-md border border-red-200 bg-red-50 p-2 text-xs font-medium text-red-900">{messageError}</p>}
+                      <Textarea
+                        value={messageDraft}
+                        onChange={(event) => setMessageDraft(event.target.value)}
+                        placeholder="Write a reply..."
+                        className="min-h-20 resize-none text-sm"
+                      />
+                      <div className="mt-2 flex justify-end">
+                        <Button type="submit" className="h-9 px-3 text-xs">
+                          <Send className="size-4" /> Send
+                        </Button>
+                      </div>
+                    </form>
+                  </>
+                ) : (
+                  <div className="grid flex-1 place-items-center p-4 text-center text-sm text-muted-foreground">Pick a connection to message.</div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>
