@@ -34,10 +34,12 @@ export default function AssistantPage() {
   const [loadingAction, setLoadingAction] = useState("");
   const [error, setError] = useState("");
   const [revision, setRevision] = useState("");
+  const [copyStatus, setCopyStatus] = useState("");
 
   async function submit(formData: FormData, modifier?: string) {
     setLoadingAction(modifier ?? "Generate draft");
     setError("");
+    setCopyStatus("");
     const payload = {
       recipient: String(formData.get("recipient") ?? "").trim(),
       situation: String(formData.get("template") ?? "").trim(),
@@ -79,6 +81,35 @@ export default function AssistantPage() {
     const data = await response.json();
     setResult(data);
     setRevision(data.message);
+  }
+
+  async function copyDraft() {
+    setCopyStatus("");
+    try {
+      await navigator.clipboard.writeText(revision);
+      setCopyStatus("Copied.");
+      return;
+    } catch {
+      const textArea = document.createElement("textarea");
+      textArea.value = revision;
+      textArea.setAttribute("readonly", "");
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      const copied = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setCopyStatus(copied ? "Copied." : "Copy failed. Select the draft text and copy it manually.");
+    }
+  }
+
+  function reviseDraft(label: string) {
+    if (!formRef.current) {
+      setError("Fill out the message details first, then try again.");
+      return;
+    }
+
+    submit(new FormData(formRef.current), label);
   }
 
   return (
@@ -140,7 +171,6 @@ export default function AssistantPage() {
             {!result && <p className="rounded-md bg-muted p-4 text-sm text-muted-foreground">Your draft will appear here with a subject line, message, tone explanation, communication tip, and review reminder.</p>}
             {result && (
               <>
-                {result.mock && <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Development fallback: no Groq API key is configured.</p>}
                 {result.subject && <p className="font-semibold text-navy">{result.subject}</p>}
                 <Textarea value={revision} onChange={(event) => setRevision(event.target.value)} className="min-h-64" aria-label="Editable generated message" />
                 <div className="grid gap-2 text-sm text-muted-foreground">
@@ -148,17 +178,16 @@ export default function AssistantPage() {
                   <p><span className="font-semibold text-navy">Communication tip:</span> {result.tip}</p>
                   <p><span className="font-semibold text-navy">Reminder:</span> {result.reminder}</p>
                 </div>
+                {copyStatus && <p className="text-sm font-medium text-muted-foreground">{copyStatus}</p>}
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary" onClick={() => navigator.clipboard.writeText(revision)}><Copy className="size-4" /> Copy</Button>
+                  <Button type="button" variant="secondary" onClick={copyDraft}><Copy className="size-4" /> Copy</Button>
                   {["Make it shorter", "Make it more formal", "Make it friendlier", "Regenerate"].map((label) => (
                     <Button
                       key={label}
+                      type="button"
                       variant="ghost"
                       disabled={Boolean(loadingAction)}
-                      onClick={() => {
-                        if (!formRef.current) return;
-                        submit(new FormData(formRef.current), label);
-                      }}
+                      onClick={() => reviseDraft(label)}
                     >
                       <RefreshCcw className="size-4" /> {loadingAction === label ? "Working..." : label}
                     </Button>
