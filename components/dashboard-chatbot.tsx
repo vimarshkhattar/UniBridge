@@ -68,45 +68,58 @@ export function DashboardChatbot() {
     setLoading(true);
     setError("");
 
-    const response = await fetch("/api/dashboard-chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        question: trimmed,
-        history: messages.slice(-6)
-      })
-    });
+    try {
+      const response = await fetch("/api/dashboard-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: trimmed,
+          history: messages.slice(-6)
+        })
+      });
 
-    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { answer?: unknown; error?: unknown } | null;
+
+      if (!response.ok) {
+        setLoading(false);
+        setError(typeof data?.error === "string" ? data.error : "The chatbot had trouble connecting. Please try again.");
+        return;
+      }
+
+      const answer = typeof data?.answer === "string" ? cleanChatText(data.answer) : "";
+      if (!answer) {
+        setLoading(false);
+        setError("The chatbot had trouble answering. Please try again.");
+        return;
+      }
+
+      await wait(THINKING_DELAY_MS);
       setLoading(false);
-      setError("I could not answer that right now. Please try again.");
-      return;
+      await typeAnswer(nextMessages, answer);
+    } catch {
+      setLoading(false);
+      setTyping(false);
+      setError("The chatbot connection had a problem. Please try again.");
     }
-
-    const data = await response.json();
-    const answer = cleanChatText(data.answer);
-    await wait(THINKING_DELAY_MS);
-    setLoading(false);
-    await typeAnswer(nextMessages, answer);
   }
 
   return (
     <Card id="campus-chatbot" className="scroll-mt-24 lg:col-span-3">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <span className="grid size-9 place-items-center rounded-md bg-red-50 text-primary">
+          <span className="grid size-9 place-items-center rounded-md bg-primary/10 text-primary">
             <Bot className="size-5" aria-hidden />
           </span>
           <CardTitle>Campus question chatbot</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <div className="max-h-80 overflow-y-auto rounded-md border border-border bg-white p-3">
+        <div className="max-h-80 overflow-y-auto rounded-md border border-border bg-background/70 p-3">
           <div className="grid gap-3">
             {messages.map((message, index) => (
               <div
                 key={`${message.role}-${index}`}
-                className={message.role === "user" ? "ml-auto max-w-[85%] rounded-md bg-primary px-3 py-2 text-sm text-white" : "max-w-[90%] rounded-md bg-muted px-3 py-2 text-sm text-foreground"}
+                className={message.role === "user" ? "ml-auto max-w-[85%] rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground" : "max-w-[90%] rounded-md bg-muted px-3 py-2 text-sm text-foreground"}
               >
                 <p className="whitespace-pre-line">{message.content}</p>
               </div>
@@ -145,7 +158,7 @@ export function DashboardChatbot() {
             placeholder="Ask about classes, professors, campus life, events, studying, housing basics..."
             className="min-h-20"
           />
-          {error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
           <Button type="submit" disabled={loading || typing || question.trim().length < 3} className="w-full sm:w-fit">
             <Send className="size-4" /> Ask chatbot
           </Button>

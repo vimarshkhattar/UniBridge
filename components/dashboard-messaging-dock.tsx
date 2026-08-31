@@ -216,7 +216,7 @@ export function DashboardMessagingDock() {
   return (
     <section
       className={cn(
-        "fixed bottom-24 right-3 z-40 w-[calc(100vw-1.5rem)] max-w-[28rem] overflow-hidden rounded-t-lg border border-border bg-white shadow-2xl shadow-red-100 transition-all sm:right-5 sm:w-[28rem] lg:bottom-4",
+        "messaging-dock-surface fixed bottom-24 right-3 z-40 w-[calc(100vw-1.5rem)] max-w-[28rem] overflow-hidden rounded-t-lg border border-border bg-white shadow-2xl shadow-red-100 transition-all sm:right-5 sm:w-[28rem] lg:bottom-4",
         expanded ? "max-h-[min(44rem,calc(100vh-7rem))]" : "max-h-16"
       )}
       aria-label="Messaging dock"
@@ -231,7 +231,7 @@ export function DashboardMessagingDock() {
             <MoreHorizontal className="size-4" aria-hidden />
           </Button>
           {optionsOpen && (
-            <div className="absolute right-16 top-11 z-50 w-52 overflow-hidden rounded-md border border-border bg-white py-1 text-sm font-semibold text-navy shadow-xl">
+            <div className="messaging-dock-menu absolute right-16 top-11 z-50 w-52 overflow-hidden rounded-md border border-border bg-white py-1 text-sm font-semibold text-navy shadow-xl">
               <button type="button" className="block w-full px-3 py-2 text-left hover:bg-muted" onClick={startNewMessage}>
                 New message
               </button>
@@ -262,7 +262,7 @@ export function DashboardMessagingDock() {
       </div>
 
       {expanded && (
-        <div className="grid max-h-[calc(100vh-11rem)] grid-rows-[auto_auto_minmax(0,1fr)] bg-white">
+        <div className="messaging-dock-panel grid max-h-[calc(100vh-11rem)] grid-rows-[auto_auto_minmax(0,1fr)] bg-white">
           <div className="p-3">
             <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2">
               <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden />

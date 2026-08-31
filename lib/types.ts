@@ -1,4 +1,4 @@
-export type AcademicYear = "First year" | "Sophomore" | "Junior" | "Senior" | "Graduate" | "Exchange";
+export type AcademicYear = "" | "First year" | "Sophomore" | "Junior" | "Senior" | "Graduate" | "Exchange";
 
 export type ConnectionType =
   | "Study partner"
