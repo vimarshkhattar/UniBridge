@@ -11,7 +11,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
         <Card>
           <CardHeader>
             <CardTitle>Create your UniBridge account</CardTitle>
-            <p className="text-sm text-muted-foreground">Use your university email to create your account.</p>
+            <p className="text-sm text-muted-foreground">Use your Stony Brook email. We will send a confirmation code or link before your account opens.</p>
           </CardHeader>
           <CardContent>
             <AuthForm mode="sign-up" error={params.error} />
