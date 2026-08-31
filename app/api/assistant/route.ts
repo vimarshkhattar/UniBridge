@@ -20,18 +20,27 @@ Explain communication choices briefly and clearly.`;
 function mockResponse(input: ReturnType<typeof aiAssistantSchema.parse>) {
   const subject = input.format === "Email" ? `Subject: Request about ${input.situation.slice(0, 42)}` : "";
   if (input.currentDraft && input.revisionInstruction) {
+    if (input.revisionInstruction === "Regenerate") {
+      return mockResponse({ ...input, currentDraft: undefined, revisionInstruction: undefined });
+    }
+
     const shorterMessage = input.currentDraft
       .split("\n")
       .filter((line) => line.trim())
       .slice(0, 4)
       .join("\n\n");
+    const revisionTone = input.revisionInstruction === "Make it more formal"
+      ? "formal and polished"
+      : input.revisionInstruction === "Make it friendlier"
+        ? "warmer and more conversational"
+        : "clearer and easier to scan";
 
     return {
       mock: true,
       subject,
       message: input.revisionInstruction === "Make it shorter"
         ? shorterMessage
-        : `${input.currentDraft}\n\nRevision note: adjusted to be ${input.revisionInstruction.replace("Make it ", "")}.`,
+        : `${input.currentDraft}\n\nRevision note: adjusted to sound ${revisionTone}.`,
       explanation: `This revision follows the request to ${input.revisionInstruction.toLowerCase()} while keeping the same facts.`,
       tip: "Review the message before sending so the tone matches your real relationship with the recipient.",
       reminder: "Mock output. Review names, dates, course numbers, deadlines, policies, and facts before sending."
