@@ -18,6 +18,13 @@ export default function DiscoverPage() {
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
 
   useEffect(() => {
+    const requestedQuery = new URLSearchParams(window.location.search).get("q")?.trim() ?? "";
+    if (requestedQuery) {
+      setQuery(requestedQuery);
+    }
+  }, []);
+
+  useEffect(() => {
     let isActive = true;
 
     void import("@/lib/supabase/user-sync").then(async ({ loadRemoteDiscoverProfiles }) => {

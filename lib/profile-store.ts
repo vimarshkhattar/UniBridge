@@ -7,6 +7,7 @@ import type { StudentProfile } from "@/lib/types";
 const STORAGE_KEY = "unibridge.profile";
 const LEGACY_STORAGE_KEY = "unibridge.demoProfile";
 const PROFILE_EVENT = "unibridge-profile-updated";
+export const STONY_BROOK_UNIVERSITY = "Stony Brook University";
 
 export type ProfileVisibility = {
   country: boolean;
@@ -21,9 +22,22 @@ export type StoredProfile = StudentProfile & {
 
 export const defaultStoredProfile: StoredProfile = {
   ...currentStudent,
-  fullName: "Vimarsh Khattar",
-  email: "vimarsh.khattar@stonybrook.edu",
-  bio: "International student looking for study partners, event buddies, and practical guidance for adjusting to university life.",
+  fullName: "",
+  email: "",
+  university: STONY_BROOK_UNIVERSITY,
+  major: "",
+  academicYear: "",
+  country: "",
+  languages: [],
+  courses: [],
+  interests: [],
+  preferredActivities: [],
+  studyStyle: "",
+  preferredStudyTimes: [],
+  studentStatus: "New student",
+  connectionTypes: [],
+  bio: "",
+  avatarUrl: undefined,
   visibility: {
     country: true,
     languages: true,
@@ -36,7 +50,6 @@ export function calculateProfileCompletion(profile: StoredProfile) {
   const checks = [
     profile.fullName,
     profile.email,
-    profile.university,
     profile.major,
     profile.academicYear,
     profile.country,
