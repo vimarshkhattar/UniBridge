@@ -39,10 +39,10 @@ export default function AssistantPage() {
     setLoadingAction(modifier ?? "Generate draft");
     setError("");
     const payload = {
-      recipient: String(formData.get("recipient")),
-      situation: String(formData.get("template")),
-      details: String(formData.get("details")),
-      desiredResult: String(formData.get("desiredResult")),
+      recipient: String(formData.get("recipient") ?? "").trim(),
+      situation: String(formData.get("template") ?? "").trim(),
+      details: String(formData.get("details") ?? "").trim(),
+      desiredResult: String(formData.get("desiredResult") ?? "").trim(),
       tone: modifier === "Make it more formal" ? "Formal" : modifier === "Make it friendlier" ? "Friendly" : String(formData.get("tone")),
       format: String(formData.get("format")),
       currentDraft: modifier ? revision : undefined,
@@ -55,7 +55,25 @@ export default function AssistantPage() {
     });
     setLoadingAction("");
     if (!response.ok) {
-      setError("Please complete the required fields and try again.");
+      const fallbackMessage = response.status === 400
+        ? "Please complete the required fields and try again."
+        : "The AI service could not answer right now. I made a safe draft from your details instead.";
+
+      if (response.status !== 400) {
+        const fallback = {
+          mock: true,
+          subject: payload.format === "Email" ? `Subject: Request about ${payload.situation}` : "",
+          message: `Hi ${payload.recipient},\n\nI hope you are doing well. I am reaching out because ${payload.details}. Would it be possible to ${payload.desiredResult}?\n\nThank you,\n[Your name]`,
+          explanation: `This uses a ${String(payload.tone).toLowerCase()} tone with a clear reason and one direct request.`,
+          tip: "Review names, dates, course numbers, and any official policy details before sending.",
+          reminder: "Generated fallback draft. Please edit it so it matches your exact situation."
+        };
+
+        setResult(fallback);
+        setRevision(fallback.message);
+      }
+
+      setError(fallbackMessage);
       return;
     }
     const data = await response.json();

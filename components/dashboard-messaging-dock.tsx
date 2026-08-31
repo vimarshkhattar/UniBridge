@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, MoreHorizontal, Search, Send, SlidersHorizontal, SquarePen } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, Grip, MoreHorizontal, Search, Send, SlidersHorizontal, SquarePen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { useConnectionsState } from "@/lib/connections-store";
@@ -40,6 +40,7 @@ function formatMessageTime(value?: string) {
 export function DashboardMessagingDock() {
   const { state } = useConnectionsState();
   const [expanded, setExpanded] = useState(false);
+  const [dockSize, setDockSize] = useState({ width: 448, height: 704 });
   const [conversationTab, setConversationTab] = useState<"focused" | "other">("focused");
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -50,6 +51,11 @@ export function DashboardMessagingDock() {
   const [dockNotice, setDockNotice] = useState("");
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [search, setSearch] = useState("");
+  const dockSizeRef = useRef(dockSize);
+
+  useEffect(() => {
+    dockSizeRef.current = dockSize;
+  }, [dockSize]);
 
   useEffect(() => {
     let isActive = true;
@@ -165,6 +171,36 @@ export function DashboardMessagingDock() {
     setDockNotice("Messaging notifications marked read for this session.");
   }
 
+  function startResize(event: React.PointerEvent<HTMLButtonElement>) {
+    if (!expanded) return;
+
+    event.preventDefault();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startSize = dockSizeRef.current;
+
+    function handlePointerMove(pointerEvent: PointerEvent) {
+      const maxWidth = Math.min(window.innerWidth - 24, 760);
+      const maxHeight = Math.min(window.innerHeight - 96, 860);
+      const nextWidth = Math.min(maxWidth, Math.max(360, startSize.width + startX - pointerEvent.clientX));
+      const nextHeight = Math.min(maxHeight, Math.max(420, startSize.height + startY - pointerEvent.clientY));
+
+      setDockSize({ width: nextWidth, height: nextHeight });
+    }
+
+    function stopResize() {
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", stopResize);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    }
+
+    document.body.style.cursor = "nwse-resize";
+    document.body.style.userSelect = "none";
+    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("pointerup", stopResize);
+  }
+
   useEffect(() => {
     if (!activeConversationId) return;
     let cleanup: (() => void) | undefined;
@@ -219,8 +255,28 @@ export function DashboardMessagingDock() {
         "messaging-dock-surface fixed bottom-24 right-3 z-40 w-[calc(100vw-1.5rem)] max-w-[28rem] overflow-hidden rounded-t-lg border border-border bg-white shadow-2xl shadow-red-100 transition-all sm:right-5 sm:w-[28rem] lg:bottom-4",
         expanded ? "max-h-[min(44rem,calc(100vh-7rem))]" : "max-h-16"
       )}
+      style={
+        expanded
+          ? {
+              width: `min(calc(100vw - 1.5rem), ${dockSize.width}px)`,
+              maxWidth: "none",
+              maxHeight: `min(calc(100vh - 7rem), ${dockSize.height}px)`
+            }
+          : undefined
+      }
       aria-label="Messaging dock"
     >
+      {expanded && (
+        <button
+          type="button"
+          aria-label="Resize messaging panel"
+          title="Drag to resize messaging"
+          onPointerDown={startResize}
+          className="absolute left-2 top-2 z-50 hidden size-8 cursor-nwse-resize place-items-center rounded-md border border-border bg-white/90 text-muted-foreground shadow-sm transition hover:text-primary md:grid"
+        >
+          <Grip className="size-4 rotate-45" aria-hidden />
+        </button>
+      )}
       <div className="flex h-16 items-center justify-between border-b border-border px-3">
         <button type="button" onClick={toggleDock} className="flex min-w-0 flex-1 items-center gap-3 text-left">
           <ProfileAvatar profile={accepted[0]} size="sm" />
@@ -262,7 +318,7 @@ export function DashboardMessagingDock() {
       </div>
 
       {expanded && (
-        <div className="messaging-dock-panel grid max-h-[calc(100vh-11rem)] grid-rows-[auto_auto_minmax(0,1fr)] bg-white">
+        <div className="messaging-dock-panel grid h-[calc(100%-4rem)] max-h-[calc(100vh-11rem)] grid-rows-[auto_auto_minmax(0,1fr)] bg-white">
           <div className="p-3">
             <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2">
               <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden />
