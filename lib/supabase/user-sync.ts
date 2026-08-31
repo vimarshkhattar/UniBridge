@@ -3,7 +3,7 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { events, students } from "@/lib/sample-data";
 import type { BuddyGroupDetails, BuddyState } from "@/lib/event-buddy-store";
-import { defaultStoredProfile, type StoredProfile } from "@/lib/profile-store";
+import { defaultStoredProfile, STONY_BROOK_UNIVERSITY, type StoredProfile } from "@/lib/profile-store";
 import type { ConnectionType } from "@/lib/types";
 
 type CurrentUser = {
@@ -233,8 +233,9 @@ export async function loadCurrentUserProfile() {
     const fallbackProfile = {
       ...defaultStoredProfile,
       id: user.id,
-      fullName: user.fullName || user.email?.split("@")[0]?.replace(/[._-]/g, " ") || "UniBridge Student",
-      email: user.email ?? defaultStoredProfile.email
+      fullName: user.fullName?.trim() || "",
+      email: user.email ?? "",
+      university: STONY_BROOK_UNIVERSITY
     } satisfies StoredProfile;
 
     await upsertCurrentUserProfile(fallbackProfile);
@@ -249,23 +250,21 @@ export async function loadCurrentUserProfile() {
   return {
     ...defaultStoredProfile,
     id: data.id,
-    fullName: data.full_name,
-    email: data.email,
-    university: universityName(data.universities) ?? defaultStoredProfile.university,
+    fullName: data.full_name ?? "",
+    email: data.email ?? user.email ?? "",
+    university: universityName(data.universities) ?? STONY_BROOK_UNIVERSITY,
     avatarUrl: data.avatar_url ?? undefined,
-    major: data.major ?? defaultStoredProfile.major,
-    academicYear: (data.academic_year ?? defaultStoredProfile.academicYear) as StoredProfile["academicYear"],
-    country: data.country ?? defaultStoredProfile.country,
-    languages: data.languages?.length ? data.languages : defaultStoredProfile.languages,
-    interests: data.preferred_activities?.length ? data.preferred_activities : defaultStoredProfile.interests,
-    preferredActivities: data.preferred_activities?.length ? data.preferred_activities : defaultStoredProfile.preferredActivities,
-    studyStyle: data.study_style ?? defaultStoredProfile.studyStyle,
-    preferredStudyTimes: data.preferred_study_times?.length ? data.preferred_study_times : defaultStoredProfile.preferredStudyTimes,
+    major: data.major ?? "",
+    academicYear: (data.academic_year ?? "") as StoredProfile["academicYear"],
+    country: data.country ?? "",
+    languages: data.languages ?? [],
+    interests: data.preferred_activities ?? [],
+    preferredActivities: data.preferred_activities ?? [],
+    studyStyle: data.study_style ?? "",
+    preferredStudyTimes: data.preferred_study_times ?? [],
     studentStatus: studentStatus(data.student_status),
-    bio: data.bio ?? defaultStoredProfile.bio,
-    connectionTypes: preferences?.length
-      ? preferences.map((preference) => preference.connection_type as ConnectionType)
-      : defaultStoredProfile.connectionTypes,
+    bio: data.bio ?? "",
+    connectionTypes: preferences?.map((preference) => preference.connection_type as ConnectionType) ?? [],
     visibility: {
       country: data.show_country,
       languages: data.show_languages,
@@ -303,23 +302,23 @@ export async function loadRemoteDiscoverProfiles(): Promise<StoredProfile[]> {
   return profileRows.map((profile, index) => ({
     ...defaultStoredProfile,
     id: profile.id,
-    fullName: profile.full_name,
+    fullName: profile.full_name ?? "",
     email: profile.email,
-    university: universityName(profile.universities) ?? defaultStoredProfile.university,
+    university: universityName(profile.universities) ?? STONY_BROOK_UNIVERSITY,
     avatarColor: students[index % students.length]?.avatarColor ?? defaultStoredProfile.avatarColor,
     avatarUrl: profile.avatar_url ?? undefined,
-    major: profile.major ?? defaultStoredProfile.major,
-    academicYear: (profile.academic_year ?? defaultStoredProfile.academicYear) as StoredProfile["academicYear"],
-    country: profile.show_country ? profile.country ?? defaultStoredProfile.country : "Hidden",
+    major: profile.major ?? "",
+    academicYear: (profile.academic_year ?? "") as StoredProfile["academicYear"],
+    country: profile.show_country ? profile.country ?? "" : "Hidden",
     languages: profile.show_languages ? profile.languages ?? [] : [],
     courses: profile.show_courses ? defaultStoredProfile.courses : [],
-    interests: profile.preferred_activities?.length ? profile.preferred_activities : defaultStoredProfile.interests,
-    preferredActivities: profile.preferred_activities?.length ? profile.preferred_activities : defaultStoredProfile.preferredActivities,
-    studyStyle: profile.study_style ?? defaultStoredProfile.studyStyle,
-    preferredStudyTimes: profile.preferred_study_times?.length ? profile.preferred_study_times : defaultStoredProfile.preferredStudyTimes,
+    interests: profile.preferred_activities ?? [],
+    preferredActivities: profile.preferred_activities ?? [],
+    studyStyle: profile.study_style ?? "",
+    preferredStudyTimes: profile.preferred_study_times ?? [],
     studentStatus: studentStatus(profile.student_status),
-    connectionTypes: preferencesByUser.get(profile.id)?.length ? preferencesByUser.get(profile.id)! : defaultStoredProfile.connectionTypes,
-    bio: profile.bio ?? defaultStoredProfile.bio,
+    connectionTypes: preferencesByUser.get(profile.id) ?? [],
+    bio: profile.bio ?? "",
     visibility: {
       country: profile.show_country,
       languages: profile.show_languages,
@@ -334,7 +333,7 @@ export async function upsertCurrentUserProfile(profile: StoredProfile) {
   const user = await currentUser();
   if (!supabase || !user) return;
 
-  const resolvedUniversityId = await universityId(profile.university);
+  const resolvedUniversityId = await universityId(STONY_BROOK_UNIVERSITY);
 
   await supabase.from("profiles").upsert({
     id: user.id,
@@ -588,21 +587,36 @@ export async function markRemoteNotificationsRead(notificationIds?: string[]) {
   await query;
 }
 
-export async function subscribeToRemoteNotifications(onNotification: (notification: AppNotification) => void): Promise<() => void> {
+export async function subscribeToRemoteNotifications(
+  onNotification: (notification: AppNotification) => void
+): Promise<() => void> {
   const supabase = client();
   const user = await currentUser();
-  if (!supabase || !user) return () => {};
 
-  const channel = supabase
-    .channel(`notifications-${user.id}`)
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-      (payload) => {
-        onNotification(mapNotification(payload.new as NotificationRow));
-      }
-    )
-    .subscribe();
+  if (!supabase || !user) {
+    return () => {};
+  }
+
+  const channelName = `notifications-${user.id}-${crypto.randomUUID()}`;
+
+  const channel = supabase.channel(channelName);
+
+  channel.on(
+    "postgres_changes",
+    {
+      event: "INSERT",
+      schema: "public",
+      table: "notifications",
+      filter: `user_id=eq.${user.id}`,
+    },
+    (payload) => {
+      onNotification(
+        mapNotification(payload.new as NotificationRow)
+      );
+    }
+  );
+
+  channel.subscribe();
 
   return () => {
     void supabase.removeChannel(channel);

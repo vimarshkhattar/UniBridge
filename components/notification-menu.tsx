@@ -69,12 +69,12 @@ export function NotificationMenu() {
         variant="ghost"
         aria-label="Notifications"
         aria-expanded={open}
-        className="relative size-10 px-0"
+        className="relative size-10 border border-white/10 bg-white/[0.05] px-0 text-foreground shadow-none transition hover:bg-white/[0.09]"
         onClick={() => setOpen((current) => !current)}
       >
         <Bell className="size-5" aria-hidden />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold leading-5 text-white" aria-hidden>
+          <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-accent px-1 text-[10px] font-bold leading-5 text-white" aria-hidden>
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -83,15 +83,15 @@ export function NotificationMenu() {
       {toast && (
         <Link
           href={toast.href}
-          className="focus-ring fixed right-4 top-20 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-lg border border-border bg-white p-4 shadow-xl"
+          className="focus-ring glass-panel fixed right-4 top-20 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-2xl p-4"
           onClick={() => handleNotificationOpen(toast)}
         >
           <div className="flex gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-red-50 text-primary">
+            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary/15 text-accent">
               <MessageCircle className="size-5" aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-navy">{toast.title}</p>
+              <p className="text-sm font-bold text-foreground">{toast.title}</p>
               <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{toast.body}</p>
             </div>
           </div>
@@ -99,12 +99,12 @@ export function NotificationMenu() {
       )}
 
       {open && (
-        <div className="absolute right-0 top-12 z-40 w-[calc(100vw-2rem)] max-w-sm rounded-lg border border-border bg-white p-3 shadow-lg sm:w-96">
+        <div className="glass-panel absolute right-0 top-12 z-40 w-[calc(100vw-2rem)] max-w-sm rounded-2xl p-3 sm:w-96">
           <div className="mb-2 flex items-center justify-between">
-            <p className="font-bold text-navy">Notifications</p>
+            <p className="font-bold text-foreground">Notifications</p>
             <button
               type="button"
-              className="focus-ring rounded-sm text-xs font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              className="focus-ring rounded-lg px-2 py-1 text-xs font-black text-accent transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={unreadCount === 0}
               onClick={() => void markRead()}
             >
@@ -113,9 +113,9 @@ export function NotificationMenu() {
           </div>
           <div className="grid max-h-[28rem] gap-2 overflow-y-auto">
             {notifications.length === 0 && (
-              <div className="rounded-md border border-border bg-muted p-4 text-center">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-center">
                 <Inbox className="mx-auto size-6 text-primary" aria-hidden />
-                <p className="mt-2 text-sm font-semibold text-navy">All caught up</p>
+                <p className="mt-2 text-sm font-semibold text-foreground">All caught up</p>
                 <p className="mt-1 text-xs text-muted-foreground">No notifications right now.</p>
               </div>
             )}
@@ -124,8 +124,8 @@ export function NotificationMenu() {
                 key={notification.id}
                 href={notification.href}
                 className={cn(
-                  "focus-ring rounded-md border border-border p-3 hover:bg-muted",
-                  !notification.isRead && "bg-red-50"
+                  "focus-ring rounded-2xl border border-white/10 p-3 transition hover:bg-white/[0.06]",
+                  !notification.isRead && "bg-primary/10"
                 )}
                 onClick={() => handleNotificationOpen(notification)}
               >
@@ -133,8 +133,8 @@ export function NotificationMenu() {
                   <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
                   <div className="min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-navy">{notification.title}</p>
-                      {!notification.isRead && <span className="mt-1 size-2 shrink-0 rounded-full bg-primary" aria-hidden />}
+                      <p className="text-sm font-semibold text-foreground">{notification.title}</p>
+                      {!notification.isRead && <span className="mt-1 size-2 shrink-0 rounded-full bg-accent" aria-hidden />}
                     </div>
                     <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{notification.body}</p>
                   </div>

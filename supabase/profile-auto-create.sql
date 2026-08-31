@@ -21,8 +21,7 @@ begin
   resolved_name := coalesce(
     nullif(trim(new.raw_user_meta_data->>'full_name'), ''),
     nullif(trim(new.raw_user_meta_data->>'name'), ''),
-    nullif(trim(split_part(resolved_email, '@', 1)), ''),
-    'UniBridge Student'
+    ''
   );
 
   insert into public.profiles (
@@ -47,7 +46,7 @@ begin
     '{}',
     '{}',
     '{}',
-    'New UniBridge member. Profile details can be completed from the Profile page.',
+    '',
     true,
     true,
     true,
@@ -90,14 +89,13 @@ select
   coalesce(
     nullif(trim(auth_user.raw_user_meta_data->>'full_name'), ''),
     nullif(trim(auth_user.raw_user_meta_data->>'name'), ''),
-    nullif(trim(split_part(auth_user.email, '@', 1)), ''),
-    'UniBridge Student'
+    ''
   ),
   auth_user.email,
   '{}',
   '{}',
   '{}',
-  'New UniBridge member. Profile details can be completed from the Profile page.',
+  '',
   true,
   true,
   true,
@@ -118,22 +116,6 @@ where auth_user.email is not null
     where existing_profile.id = auth_user.id
   )
 on conflict (id) do nothing;
-
-insert into public.connection_preferences (user_id, connection_type)
-select profile.id, preference.connection_type
-from public.profiles profile
-cross join (
-  values
-    ('Study partner'),
-    ('Friend'),
-    ('Event buddy')
-) as preference(connection_type)
-where not exists (
-  select 1
-  from public.connection_preferences existing_preference
-  where existing_preference.user_id = profile.id
-)
-on conflict do nothing;
 
 create or replace function public.current_user_university_id()
 returns uuid

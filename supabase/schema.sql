@@ -54,8 +54,7 @@ begin
   resolved_name := coalesce(
     nullif(trim(new.raw_user_meta_data->>'full_name'), ''),
     nullif(trim(new.raw_user_meta_data->>'name'), ''),
-    nullif(trim(split_part(resolved_email, '@', 1)), ''),
-    'UniBridge Student'
+    ''
   );
 
   insert into public.profiles (
@@ -80,7 +79,7 @@ begin
     '{}',
     '{}',
     '{}',
-    'New UniBridge member. Profile details can be completed from the Profile page.',
+    '',
     true,
     true,
     true,

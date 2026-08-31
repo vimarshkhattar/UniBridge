@@ -6,7 +6,7 @@ import { VerifiedBadge } from "@/components/verified-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { listFromInput, useStoredProfile } from "@/lib/profile-store";
+import { listFromInput, STONY_BROOK_UNIVERSITY, useStoredProfile } from "@/lib/profile-store";
 import { initials } from "@/lib/utils";
 
 export default function ProfilePage() {
@@ -18,6 +18,11 @@ export default function ProfilePage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
   const displayAvatarUrl = avatarOverride ?? profile.avatarUrl ?? "";
+  const previewName = profile.fullName.trim() || "Your name";
+  const previewDetails = [STONY_BROOK_UNIVERSITY, profile.major.trim(), profile.academicYear].filter(Boolean).join(" · ");
+  const previewBio =
+    profile.bio.trim() ||
+    "Add a short intro so classmates know what kind of study partners, events, or campus help you are looking for.";
 
   function resizeImage(file: File) {
     return new Promise<string>((resolve, reject) => {
@@ -71,15 +76,15 @@ export default function ProfilePage() {
   function handleSave(formData: FormData) {
     const nextProfile = {
       ...profile,
-      fullName: String(formData.get("fullName") ?? profile.fullName),
-      university: String(formData.get("university") ?? profile.university),
-      major: String(formData.get("major") ?? profile.major),
-      academicYear: String(formData.get("academicYear") ?? profile.academicYear) as typeof profile.academicYear,
-      country: String(formData.get("country") ?? profile.country),
+      fullName: String(formData.get("fullName") ?? "").trim(),
+      university: STONY_BROOK_UNIVERSITY,
+      major: String(formData.get("major") ?? "").trim(),
+      academicYear: String(formData.get("academicYear") ?? "") as typeof profile.academicYear,
+      country: String(formData.get("country") ?? "").trim(),
       languages: listFromInput(formData.get("languages")),
       courses: listFromInput(formData.get("courses")),
       interests: listFromInput(formData.get("interests")),
-      bio: String(formData.get("bio") ?? profile.bio),
+      bio: String(formData.get("bio") ?? "").trim(),
       avatarUrl: displayAvatarUrl,
       visibility: {
         country: formData.has("showCountry"),
@@ -123,17 +128,17 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               {displayAvatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={displayAvatarUrl} alt={`${profile.fullName} profile photo`} className="size-16 rounded-full object-cover" />
+                <img src={displayAvatarUrl} alt={`${previewName} profile photo`} className="size-16 rounded-full object-cover" />
               ) : (
                 <div className={`grid size-16 place-items-center rounded-full ${profile.avatarColor} text-lg font-bold text-white`}>
-                  {initials(profile.fullName)}
+                  {initials(previewName)}
                 </div>
               )}
-              <p className="text-lg font-bold text-navy">{profile.fullName}</p>
+              <p className="text-lg font-bold text-navy">{previewName}</p>
             </div>
             <VerifiedBadge email={profile.email} />
-            <p>{profile.university} · {profile.major} · {profile.academicYear}</p>
-            <p className="text-muted-foreground">{profile.bio}</p>
+            <p>{previewDetails || STONY_BROOK_UNIVERSITY}</p>
+            <p className="text-muted-foreground">{previewBio}</p>
             {reportSubmitted ? (
               <p className="rounded-md border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800">
                 Report submitted for review.
@@ -180,22 +185,21 @@ export default function ProfilePage() {
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-navy">Full name<Input name="fullName" defaultValue={profile.fullName} required /></label>
-              <label className="grid gap-2 text-sm font-medium text-navy">University<Input name="university" defaultValue={profile.university} required /></label>
               <label className="grid gap-2 text-sm font-medium text-navy">Major<Input name="major" defaultValue={profile.major} required /></label>
-              <label className="grid gap-2 text-sm font-medium text-navy">Academic year<Select name="academicYear" defaultValue={profile.academicYear}>{["First year", "Sophomore", "Junior", "Senior", "Graduate", "Exchange"].map((item) => <option key={item}>{item}</option>)}</Select></label>
-              <label className="grid gap-2 text-sm font-medium text-navy">Country<Input name="country" defaultValue={profile.country} /></label>
-              <label className="grid gap-2 text-sm font-medium text-navy">Languages<Input name="languages" defaultValue={profile.languages.join(", ")} /></label>
-              <label className="grid gap-2 text-sm font-medium text-navy">Courses<Input name="courses" defaultValue={profile.courses.join(", ")} /></label>
-              <label className="grid gap-2 text-sm font-medium text-navy">Interests<Input name="interests" defaultValue={profile.interests.join(", ")} /></label>
+              <label className="grid gap-2 text-sm font-medium text-navy">Academic year<Select name="academicYear" defaultValue={profile.academicYear}><option value="">Select academic year</option>{["First year", "Sophomore", "Junior", "Senior", "Graduate", "Exchange"].map((item) => <option key={item}>{item}</option>)}</Select></label>
+              <label className="grid gap-2 text-sm font-medium text-navy">Country<Input name="country" defaultValue={profile.country} placeholder="Country or region you are from" /></label>
+              <label className="grid gap-2 text-sm font-medium text-navy">Languages<Input name="languages" defaultValue={profile.languages.join(", ")} placeholder="English, Hindi, Spanish" /></label>
+              <label className="grid gap-2 text-sm font-medium text-navy">Courses<Input name="courses" defaultValue={profile.courses.join(", ")} placeholder="CSE 220, AMS 161" /></label>
+              <label className="grid gap-2 text-sm font-medium text-navy">Interests<Input name="interests" defaultValue={profile.interests.join(", ")} placeholder="Hackathons, cooking, soccer" /></label>
             </div>
-            <label className="grid gap-2 text-sm font-medium text-navy">Short bio<Textarea name="bio" defaultValue={profile.bio} /></label>
+            <label className="grid gap-2 text-sm font-medium text-navy">Short bio<Textarea name="bio" defaultValue={profile.bio} placeholder="Share what kind of study partners, events, or campus help you are looking for." /></label>
             <fieldset className="grid gap-3 rounded-md border border-border p-4">
               <legend className="px-1 text-sm font-bold text-navy">Privacy controls</legend>
               {[
                 ["showCountry", "Show country", profile.visibility.country],
                 ["showLanguages", "Show languages", profile.visibility.languages],
                 ["showCourses", "Show courses", profile.visibility.courses],
-                ["sameUniversityOnly", "Show profile only to students from the same university", profile.visibility.sameUniversityOnly]
+                ["sameUniversityOnly", "Show profile only to Stony Brook students", profile.visibility.sameUniversityOnly]
               ].map(([name, label, checked]) => (
                 <label key={String(name)} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <input name={String(name)} type="checkbox" defaultChecked={Boolean(checked)} />
