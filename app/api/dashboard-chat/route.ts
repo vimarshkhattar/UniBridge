@@ -12,13 +12,32 @@ For official or high-stakes topics, explain the general idea and tell the studen
 Keep answers helpful and descriptive, usually 1 to 3 short paragraphs plus a few concrete next steps when useful.`;
 
 function fallbackAnswer(question: string) {
+  const cleanedQuestion = question.trim();
+  const lowerQuestion = cleanedQuestion.toLowerCase();
+
+  if (/^(hi+|hello|hey|yo|namaste)\b/.test(lowerQuestion)) {
+    return {
+      fallback: true,
+      answer:
+        "Hi! I am here to help with campus life, classes, professors, studying, housing basics, events, making friends, and planning your next steps.\n\nYou can ask something like: How do I email a professor about office hours? Or: What should I ask my academic advisor?"
+    };
+  }
+
   return {
-    answer: `Here is a helpful way to think about it: ${question.trim()}\n\nFor most university questions, start by identifying which office owns the issue. Academic questions usually go to your professor, TA, academic advisor, or department office. Campus life questions usually go to student affairs, clubs, residence life, or the international student office.\n\nA good next step is to write down your exact concern, what result you want, and any deadline involved. Then contact the relevant office through the official university website so you have the most accurate information.`
+    fallback: true,
+    answer: `I can still help you think through this: ${cleanedQuestion}\n\nFor most university questions, start by identifying which office owns the issue. Academic questions usually go to your professor, TA, academic advisor, or department office. Campus life questions usually go to student affairs, clubs, residence life, or the international student office.\n\nNext steps:\n1. Write down your exact concern and what result you want.\n2. Check whether there is a deadline or policy involved.\n3. Contact the relevant university office through the official website so you get accurate information.`
   };
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid chat request." }, { status: 400 });
+  }
+
   const parsed = dashboardChatSchema.safeParse(body);
 
   if (!parsed.success) {
@@ -30,21 +49,27 @@ export async function POST(request: Request) {
   }
 
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-  const completion = await groq.chat.completions.create({
-    model: "llama-3.1-8b-instant",
-    messages: [
-      { role: "system", content: systemPrompt },
-      ...(parsed.data.history ?? []).map((message) => ({
-        role: message.role,
-        content: message.content
-      })),
-      { role: "user", content: parsed.data.question }
-    ],
-    temperature: 0.35
-  });
 
-  const answer = completion.choices[0]?.message?.content;
-  if (!answer) return NextResponse.json({ error: "No chat response returned." }, { status: 502 });
+  try {
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...(parsed.data.history ?? []).map((message) => ({
+          role: message.role,
+          content: message.content
+        })),
+        { role: "user", content: parsed.data.question }
+      ],
+      temperature: 0.35
+    });
 
-  return NextResponse.json({ answer });
+    const answer = completion.choices[0]?.message?.content;
+    if (!answer) return NextResponse.json(fallbackAnswer(parsed.data.question));
+
+    return NextResponse.json({ answer });
+  } catch (error) {
+    console.error("Dashboard chatbot failed", error);
+    return NextResponse.json(fallbackAnswer(parsed.data.question));
+  }
 }

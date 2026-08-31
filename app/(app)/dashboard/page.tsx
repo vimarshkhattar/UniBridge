@@ -27,7 +27,7 @@ export default function DashboardPage() {
 
   return (
     <div className="grid gap-6">
-      <section className="rounded-lg border border-border bg-white p-6 shadow-sm">
+      <section className="card-surface p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
             {profile.avatarUrl ? (
@@ -37,15 +37,15 @@ export default function DashboardPage() {
                 width={80}
                 height={80}
                 unoptimized
-                className="size-20 shrink-0 rounded-full object-cover ring-4 ring-red-50"
+                className="size-20 shrink-0 rounded-full object-cover ring-4 ring-white/10"
               />
             ) : (
-              <div className={`grid size-20 shrink-0 place-items-center rounded-full ${profile.avatarColor} text-xl font-bold text-white ring-4 ring-red-50`}>
+              <div className={`grid size-20 shrink-0 place-items-center rounded-full ${profile.avatarColor} text-xl font-bold text-white ring-4 ring-white/10`}>
                 {initials(profile.fullName)}
               </div>
             )}
             <div>
-              <h1 className="text-3xl font-bold text-navy">Welcome, {firstName}</h1>
+              <h1 className="text-3xl font-black text-foreground">Welcome, {firstName}</h1>
               <p className="mt-2 text-muted-foreground">
                 {profileCompletion === 100 ? "Your profile is complete and ready for better matches." : "Complete your profile to improve matching."}
               </p>
@@ -53,11 +53,11 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="w-full max-w-xs">
-            <div className="flex items-center justify-between text-sm font-semibold text-navy">
+            <div className="flex items-center justify-between text-sm font-semibold text-foreground">
               <span>Profile completion</span>
               <span>{profileCompletion}%</span>
             </div>
-            <div className="mt-2 h-3 rounded-full bg-muted">
+            <div className="mt-2 h-3 rounded-full bg-white/10">
               <div className="h-3 rounded-full bg-primary" style={{ width: `${profileCompletion}%` }} />
             </div>
           </div>
