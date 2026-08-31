@@ -59,27 +59,31 @@ export async function POST(request: Request) {
     return NextResponse.json(mockResponse(parsed.data));
   }
 
-  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-  const completion = await groq.chat.completions.create({
-    model: "llama-3.1-8b-instant",
-    messages: [
-      { role: "system", content: systemPrompt },
-      {
-        role: "user",
-        content: JSON.stringify({
-          task: parsed.data.currentDraft && parsed.data.revisionInstruction
-            ? "Revise currentDraft according to revisionInstruction. Preserve the student's facts. Return JSON with subject, message, explanation, tip, reminder."
-            : "Draft a polished, specific, send-ready message from the student's point of view. Do not speak as the assistant. Return JSON with subject, message, explanation, tip, reminder.",
-          input: parsed.data
-        })
-      }
-    ],
-    temperature: 0.4,
-    response_format: { type: "json_object" }
-  });
+  try {
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: JSON.stringify({
+            task: parsed.data.currentDraft && parsed.data.revisionInstruction
+              ? "Revise currentDraft according to revisionInstruction. Preserve the student's facts. Return JSON with subject, message, explanation, tip, reminder."
+              : "Draft a polished, specific, send-ready message from the student's point of view. Do not speak as the assistant. Return JSON with subject, message, explanation, tip, reminder.",
+            input: parsed.data
+          })
+        }
+      ],
+      temperature: 0.4,
+      response_format: { type: "json_object" }
+    });
 
-  const content = completion.choices[0]?.message?.content;
-  if (!content) return NextResponse.json({ error: "No assistant response returned." }, { status: 502 });
+    const content = completion.choices[0]?.message?.content;
+    if (!content) return NextResponse.json(mockResponse(parsed.data));
 
-  return NextResponse.json({ mock: false, ...JSON.parse(content) });
+    return NextResponse.json({ mock: false, ...JSON.parse(content) });
+  } catch {
+    return NextResponse.json(mockResponse(parsed.data));
+  }
 }
