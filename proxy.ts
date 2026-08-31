@@ -34,6 +34,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (!user.email_confirmed_at) {
+    await supabase.auth.signOut();
+    const url = request.nextUrl.clone();
+    url.pathname = "/sign-in";
+    url.search = "";
+    url.searchParams.set("error", "Please confirm your Stony Brook email before continuing.");
+    return NextResponse.redirect(url);
+  }
+
   return response;
 }
 

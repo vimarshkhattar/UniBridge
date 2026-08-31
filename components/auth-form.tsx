@@ -25,7 +25,7 @@ export function AuthForm({
         </label>
       )}
       <label className="grid gap-2 text-sm font-medium text-navy">
-        University email
+        Stony Brook email
         <Input name="email" type="email" autoComplete="email" required placeholder="you@stonybrook.edu" />
       </label>
       <label className="grid gap-2 text-sm font-medium text-navy">
