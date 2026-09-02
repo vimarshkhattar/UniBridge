@@ -229,7 +229,7 @@ export default function ConnectionsPage() {
 
       {accepted.length > 0 && (
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b border-border bg-white px-4 py-3">
+          <div className="flex items-center justify-between gap-3 border-b border-border bg-black px-4 py-3">
             <div>
               <CardTitle>Messaging</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">Talk with students after both people are connected.</p>
@@ -253,7 +253,7 @@ export default function ConnectionsPage() {
           </div>
           <CardContent className="p-0">
             <div className="grid min-h-[34rem] lg:grid-cols-[19rem_minmax(0,1fr)]">
-              <aside className="border-b border-border bg-white lg:border-b-0 lg:border-r">
+              <aside className="border-b border-border bg-black lg:border-b-0 lg:border-r">
                 <div className="border-b border-border p-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Conversations</p>
                 </div>
@@ -265,7 +265,7 @@ export default function ConnectionsPage() {
                       onClick={() => void openConversation(student.id)}
                       className={cn(
                         "flex w-full items-center gap-3 border-b border-border px-3 py-3 text-left transition",
-                        activeConversationId === student.id ? "bg-red-50" : "bg-white hover:bg-muted"
+                        activeConversationId === student.id ? "bg-primary/20" : "bg-black hover:bg-primary/10"
                       )}
                     >
                       <ProfileAvatar profile={student} size="sm" />
@@ -278,7 +278,7 @@ export default function ConnectionsPage() {
                 </div>
               </aside>
 
-              <section className="flex min-h-[34rem] flex-col bg-white">
+              <section className="flex min-h-[34rem] flex-col bg-black">
                 {activeConversation ? (
                   <>
                     <div className="flex items-center gap-3 border-b border-border px-4 py-3">
@@ -291,19 +291,19 @@ export default function ConnectionsPage() {
                       </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto bg-[#f3f2ef] p-4">
+                    <div className="flex-1 overflow-y-auto bg-black p-4">
                       <div className="mx-auto grid max-w-3xl gap-3">
-                        <div className="rounded-md border border-border bg-white p-3 text-sm text-muted-foreground">
+                        <div className="rounded-md border border-primary/30 bg-primary/10 p-3 text-sm text-muted-foreground">
                           <p className="font-semibold text-navy">Suggested opener</p>
                           <p className="mt-1">
                             Hi {activeConversation.fullName.split(" ")[0]}, nice to connect on UniBridge. Would you like to plan a study session or attend a campus event together?
                           </p>
                         </div>
                         {isLoadingMessages && (
-                          <p className="rounded-md border border-border bg-white p-3 text-sm text-muted-foreground">Loading messages...</p>
+                          <p className="rounded-md border border-border bg-white/[0.06] p-3 text-sm text-muted-foreground">Loading messages...</p>
                         )}
                         {!isLoadingMessages && messages.length === 0 && (
-                          <p className="rounded-md border border-border bg-white p-3 text-sm text-muted-foreground">No messages yet. Send the first message when you are ready.</p>
+                          <p className="rounded-md border border-border bg-white/[0.06] p-3 text-sm text-muted-foreground">No messages yet. Send the first message when you are ready.</p>
                         )}
                         {messages.map((message) => {
                           const sentTime = new Date(message.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -313,7 +313,7 @@ export default function ConnectionsPage() {
                               key={message.id}
                               className={cn(
                                 "max-w-[82%] rounded-2xl px-4 py-2 text-sm shadow-sm",
-                                message.isOwn ? "ml-auto rounded-br-md bg-primary text-white" : "mr-auto rounded-bl-md border border-border bg-white text-foreground"
+                                message.isOwn ? "ml-auto rounded-br-md bg-primary text-white" : "mr-auto rounded-bl-md border border-border bg-white/[0.06] text-foreground"
                               )}
                             >
                               <p className={cn("text-xs font-semibold", message.isOwn ? "text-white/80" : "text-muted-foreground")}>{message.senderName}</p>
@@ -325,7 +325,7 @@ export default function ConnectionsPage() {
                       </div>
                     </div>
 
-                    <form onSubmit={sendMessage} className="border-t border-border bg-white p-3">
+                    <form onSubmit={sendMessage} className="border-t border-border bg-black p-3">
                       {messageError && (
                         <p className="mb-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-900">{messageError}</p>
                       )}
