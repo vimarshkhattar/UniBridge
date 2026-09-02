@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     return redirectWithError("Authentication is not configured.");
   }
 
-  const response = NextResponse.redirect(redirectTo);
+  let response = NextResponse.redirect(redirectTo);
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
@@ -48,7 +48,23 @@ export async function GET(request: NextRequest) {
   }));
 
   if (error) {
-    return redirectWithError(error.message);
+    return redirectWithError(error.message, "/sign-in");
+  }
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("major,academic_year")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile?.major || !profile?.academic_year) {
+      response = NextResponse.redirect(new URL("/onboarding", requestUrl.origin));
+    }
   }
 
   return response;
