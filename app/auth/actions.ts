@@ -33,13 +33,13 @@ export async function signUpAction(formData: FormData) {
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: `${await getAppOrigin()}/auth/callback?next=/dashboard`
+      emailRedirectTo: `${await getAppOrigin()}/auth/callback?next=/onboarding`
     }
   });
 
   if (error) redirect(`/sign-up?error=${encodeURIComponent(error.message)}`);
   await supabase.auth.signOut();
-  redirect(`/sign-in?message=${encodeURIComponent("Account created. Check your Stony Brook email for the confirmation code or link before signing in.")}`);
+  redirect(`/sign-in?message=${encodeURIComponent("Account created. Check your Stony Brook email for the confirmation code or link before signing in.")}&next=/onboarding`);
 }
 
 export async function signInAction(formData: FormData) {
