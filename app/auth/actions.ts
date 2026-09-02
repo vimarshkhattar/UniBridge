@@ -38,7 +38,6 @@ export async function signUpAction(formData: FormData) {
   });
 
   if (error) redirect(`/sign-up?error=${encodeURIComponent(error.message)}`);
-  await supabase.auth.signOut();
   redirect(`/sign-in?message=${encodeURIComponent("Account created. Check your Stony Brook email for the confirmation code or link before signing in.")}&next=/onboarding`);
 }
 
@@ -58,7 +57,14 @@ export async function signInAction(formData: FormData) {
     redirect(`/sign-in?error=${encodeURIComponent("Please confirm your Stony Brook email before signing in.")}`);
   }
 
-  redirect(next);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("major,academic_year")
+    .eq("id", data.user.id)
+    .maybeSingle();
+  const needsProfileSetup = !profile?.major || !profile?.academic_year;
+
+  redirect(needsProfileSetup ? "/onboarding" : next);
 }
 
 export async function signOutAction() {

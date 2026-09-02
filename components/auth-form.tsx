@@ -33,8 +33,8 @@ export function AuthForm({
         <Input name="password" type="password" autoComplete={isSignUp ? "new-password" : "current-password"} required minLength={8} />
       </label>
       {next && <input type="hidden" name="next" value={next} />}
-      {error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {message && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{message}</p>}
+      {error && <p className="rounded-md border border-primary/40 bg-primary/10 p-3 text-sm font-medium text-primary">{error}</p>}
+      {message && <p className="rounded-md border border-primary/30 bg-black p-3 text-sm font-medium text-foreground">{message}</p>}
       <Button type="submit">{isSignUp ? "Create account" : "Sign in"}</Button>
       <div className="text-sm text-muted-foreground">
         <Link className="focus-ring rounded-sm hover:text-navy" href={isSignUp ? "/sign-in" : "/sign-up"}>
