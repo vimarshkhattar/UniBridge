@@ -5,7 +5,7 @@ export function Badge({ className, ...props }: React.HTMLAttributes<HTMLSpanElem
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-800",
+        "inline-flex items-center rounded-full border border-[rgba(225,29,46,0.32)] bg-[var(--red-soft)] px-2.5 py-1 text-xs font-semibold text-[#ffc9cd]",
         className
       )}
       {...props}

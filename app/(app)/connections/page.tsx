@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/input";
 import { useConnectionsState } from "@/lib/connections-store";
 import { useDiscoverActions } from "@/lib/discover-actions-store";
-import { students } from "@/lib/sample-data";
 import type { ConnectionMessage } from "@/lib/supabase/user-sync";
 import type { StudentProfile } from "@/lib/types";
 import { cn, initials } from "@/lib/utils";
@@ -58,7 +57,6 @@ export default function ConnectionsPage() {
 
   const profileById = useMemo(() => {
     const profiles = new Map<string, StudentProfile>();
-    students.forEach((student) => profiles.set(student.id, student));
     remoteProfiles.forEach((profile) => profiles.set(profile.id, profile));
     return profiles;
   }, [remoteProfiles]);
@@ -168,9 +166,10 @@ export default function ConnectionsPage() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="depth-scene grid gap-6">
       <div>
-        <h1 className="text-3xl font-bold text-navy">Connections</h1>
+        <p className="eyebrow">Your people</p>
+        <h1 className="mt-1 text-3xl font-black text-navy">Connections</h1>
         <p className="mt-2 text-muted-foreground">Manage accepted connections, pending requests, saved profiles, and conversations with people who accepted.</p>
       </div>
 
@@ -228,8 +227,8 @@ export default function ConnectionsPage() {
       </div>
 
       {accepted.length > 0 && (
-        <Card className="overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b border-border bg-black px-4 py-3">
+        <Card className="tilt-none overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-border bg-[var(--bg-sunken)] px-4 py-3">
             <div>
               <CardTitle>Messaging</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">Talk with students after both people are connected.</p>
@@ -253,7 +252,7 @@ export default function ConnectionsPage() {
           </div>
           <CardContent className="p-0">
             <div className="grid min-h-[34rem] lg:grid-cols-[19rem_minmax(0,1fr)]">
-              <aside className="border-b border-border bg-black lg:border-b-0 lg:border-r">
+              <aside className="border-b border-border bg-[var(--bg-sunken)] lg:border-b-0 lg:border-r">
                 <div className="border-b border-border p-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Conversations</p>
                 </div>
@@ -265,7 +264,7 @@ export default function ConnectionsPage() {
                       onClick={() => void openConversation(student.id)}
                       className={cn(
                         "flex w-full items-center gap-3 border-b border-border px-3 py-3 text-left transition",
-                        activeConversationId === student.id ? "bg-primary/20" : "bg-black hover:bg-primary/10"
+                        activeConversationId === student.id ? "bg-[var(--red-soft)]" : "bg-[var(--bg-sunken)] hover:bg-white/[0.05]"
                       )}
                     >
                       <ProfileAvatar profile={student} size="sm" />
@@ -278,7 +277,7 @@ export default function ConnectionsPage() {
                 </div>
               </aside>
 
-              <section className="flex min-h-[34rem] flex-col bg-black">
+              <section className="flex min-h-[34rem] flex-col bg-[var(--bg-sunken)]">
                 {activeConversation ? (
                   <>
                     <div className="flex items-center gap-3 border-b border-border px-4 py-3">
@@ -291,7 +290,7 @@ export default function ConnectionsPage() {
                       </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto bg-black p-4">
+                    <div className="flex-1 overflow-y-auto bg-[var(--bg-sunken)] p-4">
                       <div className="mx-auto grid max-w-3xl gap-3">
                         <div className="rounded-md border border-primary/30 bg-primary/10 p-3 text-sm text-muted-foreground">
                           <p className="font-semibold text-navy">Suggested opener</p>
@@ -325,7 +324,7 @@ export default function ConnectionsPage() {
                       </div>
                     </div>
 
-                    <form onSubmit={sendMessage} className="border-t border-border bg-black p-3">
+                    <form onSubmit={sendMessage} className="border-t border-border bg-[var(--bg-sunken)] p-3">
                       {messageError && (
                         <p className="mb-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-900">{messageError}</p>
                       )}

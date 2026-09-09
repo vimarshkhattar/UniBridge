@@ -45,9 +45,9 @@ export function AppNavLink({ href, label, mobileLabel, iconName, mobile = false 
       <Link
         href={href}
         className={cn(
-          "focus-ring flex min-w-[5.8rem] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-black transition",
+          "focus-ring nav-3d flex min-w-[5.8rem] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-bold",
           active
-            ? "bg-primary/20 text-white shadow-[0_12px_30px_-20px_rgba(255,59,59,0.9)]"
+            ? "bg-[var(--red-soft)] text-white shadow-[0_12px_30px_-20px_var(--red-glow)]"
             : "text-muted-foreground hover:bg-white/[0.06] hover:text-white"
         )}
       >
@@ -61,16 +61,16 @@ export function AppNavLink({ href, label, mobileLabel, iconName, mobile = false 
     <Link
       href={href}
       className={cn(
-        "focus-ring group relative flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-black transition",
+        "focus-ring nav-3d group relative flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-bold",
         active
-          ? "border-white/10 bg-primary/15 text-white shadow-[0_18px_42px_-30px_rgba(255,59,59,0.9)]"
-          : "border-transparent text-muted-foreground hover:border-white/10 hover:bg-white/[0.055] hover:text-white"
+          ? "border-[rgba(225,29,46,0.3)] bg-[var(--red-soft)] text-white shadow-[0_18px_42px_-30px_var(--red-glow)]"
+          : "border-transparent text-muted-foreground hover:border-border hover:bg-white/[0.05] hover:text-foreground"
       )}
     >
       <span
         className={cn(
           "grid size-9 place-items-center rounded-xl transition",
-          active ? "bg-primary text-white" : "bg-white/[0.045] text-muted-foreground group-hover:text-white"
+          active ? "bg-brand-gradient text-white" : "bg-white/[0.045] text-muted-foreground group-hover:text-foreground"
         )}
       >
         <Icon className="size-4" aria-hidden />

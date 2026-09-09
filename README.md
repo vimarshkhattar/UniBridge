@@ -2,7 +2,7 @@
 
 **Connect. Belong. Succeed.**
 
-UniBridge is a full-stack student connection platform built to help international university students feel supported from the moment they arrive on campus. Students can create a detailed profile, highlight their courses and interests, discover compatible classmates, send connection requests, save profiles they want to revisit, and build smaller communities around shared goals.
+UniBridge is a full-stack student connection platform for all new college students and transfer students who face problems when coming to a new university. Arriving somewhere unfamiliar is hard: you do not know anyone in your classes, you are not sure how things work, and asking for help feels awkward. Students can create a detailed profile, highlight their courses and interests, discover compatible classmates, send connection requests, save profiles they want to revisit, and build smaller communities around shared goals.
 
 The platform also supports practical campus-life workflows: students can browse events, join activities, request an event buddy, create or join small buddy groups, and chat with group members before meeting in person. UniBridge includes helpful guides, a dashboard question assistant for general university-life questions, and a communication helper that drafts respectful messages for professors, classmates, advisors, and campus offices.
 

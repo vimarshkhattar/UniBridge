@@ -1,9 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function ResetPasswordForm() {
@@ -133,46 +132,81 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
-      {recoveryTokenHash && !isReady && (
-        <div className="grid gap-3 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-          <p>Your reset link is ready. Continue to choose a new password.</p>
-          <Button type="button" onClick={handleContinueReset} disabled={isPreparing}>
-            {isPreparing ? "Preparing..." : "Continue reset"}
-          </Button>
+    <div className="auth-dialog">
+      <div className="auth-head">
+        <span className="relative grid size-12 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-[#140a0d] text-sm font-black text-white shadow-glow">
+          <span className="absolute inset-0 bg-brand-gradient opacity-85" />
+          <span className="relative">UB</span>
+        </span>
+        <h1 className="auth-title">Choose a new password</h1>
+        <p className="auth-blurb">Pick something at least 8 characters long that you have not used here before.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} noValidate>
+        {recoveryTokenHash && !isReady && (
+          <div className="auth-note" data-tone="info">
+            <p className="mb-3">Your reset link is ready. Continue to choose a new password.</p>
+            <button type="button" className="auth-btn auth-btn-ghost" onClick={handleContinueReset} disabled={isPreparing}>
+              {isPreparing ? "Preparing…" : "Continue reset"}
+            </button>
+          </div>
+        )}
+
+        <div className="field">
+          <div className="field-label-row">
+            <label htmlFor="reset-password">New password</label>
+          </div>
+          <input
+            id="reset-password"
+            className="field-input"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            type="password"
+            autoComplete="new-password"
+            minLength={8}
+            disabled={!isReady}
+            placeholder="At least 8 characters"
+          />
         </div>
-      )}
-      <label className="grid gap-2 text-sm font-medium text-navy">
-        New password
-        <Input
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          disabled={!isReady}
-        />
-      </label>
-      <label className="grid gap-2 text-sm font-medium text-navy">
-        Confirm new password
-        <Input
-          value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          disabled={!isReady}
-        />
-      </label>
-      {error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {!error && !isReady && !recoveryTokenHash && (
-        <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">Preparing your reset link...</p>
-      )}
-      <Button type="submit" disabled={!isReady || isSubmitting}>
-        {isSubmitting ? "Updating..." : "Update password"}
-      </Button>
-    </form>
+
+        <div className="field">
+          <div className="field-label-row">
+            <label htmlFor="reset-confirm">Confirm new password</label>
+          </div>
+          <input
+            id="reset-confirm"
+            className="field-input"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            type="password"
+            autoComplete="new-password"
+            minLength={8}
+            disabled={!isReady}
+            placeholder="Type it once more"
+          />
+        </div>
+
+        {error && (
+          <p className="auth-note" role="alert">
+            {error}
+          </p>
+        )}
+        {!error && !isReady && !recoveryTokenHash && (
+          <p className="auth-note" data-tone="info" role="status">
+            Preparing your reset link…
+          </p>
+        )}
+
+        <button className="auth-btn auth-btn-primary" type="submit" disabled={!isReady || isSubmitting}>
+          {isSubmitting ? "Updating…" : "Update password"}
+        </button>
+
+        <p className="auth-swap">
+          <Link href="/sign-in" className="link">
+            Back to log in
+          </Link>
+        </p>
+      </form>
+    </div>
   );
 }

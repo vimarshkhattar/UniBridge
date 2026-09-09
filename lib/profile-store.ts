@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import { currentStudent } from "@/lib/sample-data";
 import type { StudentProfile } from "@/lib/types";
 
 const STORAGE_KEY = "unibridge.profile";
@@ -21,7 +20,7 @@ export type StoredProfile = StudentProfile & {
 };
 
 export const defaultStoredProfile: StoredProfile = {
-  ...currentStudent,
+  id: "current-user",
   fullName: "",
   email: "",
   university: STONY_BROOK_UNIVERSITY,
@@ -37,6 +36,7 @@ export const defaultStoredProfile: StoredProfile = {
   studentStatus: "New student",
   connectionTypes: [],
   bio: "",
+  avatarColor: "bg-primary",
   avatarUrl: undefined,
   visibility: {
     country: true,

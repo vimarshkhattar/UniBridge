@@ -1,5 +1,10 @@
-import { redirect } from "next/navigation";
+import { AuthShell } from "@/components/auth-shell";
+import { ResetPasswordForm } from "@/components/reset-password-form";
 
 export default function ResetPasswordPage() {
-  redirect("/sign-in?message=Password reset is currently unavailable. Please create a new account or contact UniBridge support.");
+  return (
+    <AuthShell>
+      <ResetPasswordForm />
+    </AuthShell>
+  );
 }

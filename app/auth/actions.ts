@@ -28,7 +28,7 @@ export async function signUpAction(formData: FormData) {
     redirect(`/sign-up?error=${encodeURIComponent("Please use your Stony Brook email address.")}`);
   }
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -38,7 +38,12 @@ export async function signUpAction(formData: FormData) {
   });
 
   if (error) redirect(`/sign-up?error=${encodeURIComponent(error.message)}`);
-  redirect(`/sign-in?message=${encodeURIComponent("Account created. Check your Stony Brook email for the confirmation code or link before signing in.")}&next=/onboarding`);
+
+  // With email confirmation switched off in Supabase, sign-up returns a live
+  // session and the student goes straight into onboarding.
+  if (data.session) redirect("/onboarding");
+
+  redirect(`/sign-in?message=${encodeURIComponent("Account created. Sign in to finish setting up your profile.")}&next=/onboarding`);
 }
 
 export async function signInAction(formData: FormData) {
@@ -51,11 +56,6 @@ export async function signInAction(formData: FormData) {
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) redirect(`/sign-in?error=${encodeURIComponent(error.message)}`);
-
-  if (!data.user.email_confirmed_at) {
-    await supabase.auth.signOut();
-    redirect(`/sign-in?error=${encodeURIComponent("Please confirm your Stony Brook email before signing in.")}`);
-  }
 
   const { data: profile } = await supabase
     .from("profiles")

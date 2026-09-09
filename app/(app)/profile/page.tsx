@@ -118,9 +118,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
+    <div className="depth-scene grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
       <section>
-        <h1 className="text-3xl font-bold text-navy">Profile</h1>
+        <p className="eyebrow">Your identity</p>
+        <h1 className="mt-1 text-3xl font-black text-navy">Profile</h1>
         <p className="mt-2 text-muted-foreground">Edit your public profile, courses, interests, connection preferences, and privacy settings.</p>
         <Card className="mt-6">
           <CardHeader><CardTitle>Public preview</CardTitle></CardHeader>
