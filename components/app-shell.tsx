@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <NavSection title="Account" items={accountNav} />
           </nav>
         </div>
-        <div className="sidebar-promo-card glass-panel relative z-10 mt-4 shrink-0 rounded-3xl p-4">
+        <div className="sidebar-promo-card glass-panel tilt-card relative z-10 mt-4 shrink-0 rounded-3xl p-4">
           <div className="flex items-center gap-3">
             <span className="grid size-10 place-items-center rounded-2xl bg-primary/20 text-sm font-black text-white">UB</span>
             <div>
@@ -85,7 +85,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            Discover classmates, plan events, and keep conversations moving without the awkward guesswork.
+            For new and transfer students starting at a new university. Discover classmates, plan events, and keep
+            conversations moving without the awkward guesswork.
           </p>
         </div>
       </aside>
@@ -113,7 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-7xl px-4 py-5 pb-32 sm:px-6 sm:py-7 lg:px-8 lg:pb-10">{children}</main>
+        <main className="depth-scene mx-auto max-w-7xl px-4 py-5 pb-32 sm:px-6 sm:py-7 lg:px-8 lg:pb-10">{children}</main>
       </div>
 
       <nav
@@ -131,7 +132,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         href="/dashboard#campus-chatbot"
         aria-label="Open campus chatbot"
         title="Open campus chatbot"
-        className="focus-ring bg-brand-gradient shadow-glow fixed bottom-28 right-4 z-30 grid size-14 place-items-center rounded-full text-white transition hover:scale-105 sm:right-5 lg:bottom-6"
+        className="focus-ring press-3d animate-bob bg-brand-gradient shadow-glow fixed bottom-28 right-4 z-30 grid size-14 place-items-center rounded-full text-white sm:right-5 lg:bottom-6"
       >
         <MessageCircle className="size-6" aria-hidden />
         <span className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-background bg-green-500" aria-hidden />

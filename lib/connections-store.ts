@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import { students } from "@/lib/sample-data";
 
 export type ConnectionsState = {
   acceptedIds: string[];
@@ -13,10 +12,26 @@ const STORAGE_KEY = "unibridge.connections";
 const STORE_EVENT = "unibridge-connections-updated";
 
 const defaultConnections: ConnectionsState = {
-  acceptedIds: students.slice(1, 3).map((student) => student.id),
-  pendingIds: students.slice(3, 6).map((student) => student.id),
+  acceptedIds: [],
+  pendingIds: [],
   declinedIds: []
 };
+
+/**
+ * Earlier builds seeded this store with placeholder student ids ("user-002").
+ * Those people never existed, so any leftover ids are dropped on read.
+ */
+const LEGACY_SAMPLE_ID = /^user-\d+$/;
+
+function withoutLegacySampleIds(state: ConnectionsState): ConnectionsState {
+  const clean = (ids: string[]) => (ids ?? []).filter((id) => !LEGACY_SAMPLE_ID.test(id));
+
+  return {
+    acceptedIds: clean(state.acceptedIds),
+    pendingIds: clean(state.pendingIds),
+    declinedIds: clean(state.declinedIds)
+  };
+}
 
 let cachedRaw: string | null = null;
 let cachedConnections = defaultConnections;
@@ -28,7 +43,7 @@ function readConnections(): ConnectionsState {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored === cachedRaw) return cachedConnections;
 
-    const state = stored ? { ...defaultConnections, ...JSON.parse(stored) } : defaultConnections;
+    const state = stored ? withoutLegacySampleIds({ ...defaultConnections, ...JSON.parse(stored) }) : defaultConnections;
     cachedRaw = stored;
     cachedConnections = state;
     return state;

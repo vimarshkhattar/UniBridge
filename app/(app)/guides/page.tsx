@@ -19,7 +19,7 @@ export default function GuidesPage() {
   }, [category, query]);
 
   return (
-    <div className="grid gap-6">
+    <div className="depth-scene grid gap-6">
       <div>
         <h1 className="text-3xl font-bold text-navy">Survival Guides</h1>
         <p className="mt-2 text-muted-foreground">Search practical guides for academics, communication, campus life, employment, safety, and Stony Brook launch resources.</p>
