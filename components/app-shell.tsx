@@ -48,12 +48,12 @@ function NavSection({ title, items }: { title: string; items: NavItem[] }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-dark-shell min-h-screen bg-background text-foreground">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-80 flex-col border-r border-white/10 bg-[#0a0c11]/95 p-5 backdrop-blur-xl lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-80 flex-col border-r border-border bg-[color-mix(in_srgb,var(--bg-sunken)_92%,transparent)] p-5 backdrop-blur-xl lg:flex">
         <div className="mesh-glow absolute inset-0 opacity-70" aria-hidden />
         <div className="relative z-10 flex min-h-0 flex-1 flex-col">
           <Logo href="/dashboard" />
-        <form action="/discover" className="mt-7 rounded-3xl border border-white/10 bg-white/[0.045] p-3">
-          <div className="flex items-center gap-3 rounded-2xl bg-black/20 px-3 py-2 text-muted-foreground transition focus-within:bg-black/35 focus-within:text-foreground">
+        <form action="/discover" className="mt-7 rounded-3xl border border-border bg-white/[0.035] p-3">
+          <div className="flex items-center gap-3 rounded-2xl bg-[var(--bg-sunken)] px-3 py-2 text-muted-foreground transition focus-within:border-[var(--red)] focus-within:text-foreground">
             <button
               type="submit"
               aria-label="Search UniBridge"
@@ -66,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               type="search"
               aria-label="Search students, events, and guides"
               placeholder="Search students, events, guides"
-              className="min-w-0 flex-1 bg-transparent text-xs font-bold text-foreground outline-none placeholder:text-muted-foreground"
+              className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-foreground outline-none placeholder:text-muted-foreground"
             />
           </div>
         </form>
@@ -76,22 +76,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <NavSection title="Account" items={accountNav} />
           </nav>
         </div>
-        <div className="sidebar-promo-card glass-panel relative z-10 mt-4 shrink-0 rounded-3xl p-4">
+        <div className="sidebar-promo-card glass-panel tilt-card relative z-10 mt-4 shrink-0 rounded-3xl p-4">
           <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-2xl bg-primary/20 text-sm font-black text-white">UB</span>
+            <span className="grid size-10 place-items-center rounded-2xl bg-brand-gradient text-sm font-black text-white">UB</span>
             <div>
               <p className="text-sm font-black text-foreground">UniBridge</p>
               <p className="text-xs font-semibold text-muted-foreground">Campus connection space</p>
             </div>
           </div>
           <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            Discover classmates, plan events, and keep conversations moving without the awkward guesswork.
+            For new and transfer students starting at a new university. Discover classmates, plan events, and keep
+            conversations moving without the awkward guesswork.
           </p>
         </div>
       </aside>
 
       <div className="lg:pl-80">
-        <header className="sticky top-0 z-10 border-b border-white/10 bg-background/80 px-4 py-3 backdrop-blur-xl sm:px-6">
+        <header className="sticky top-0 z-10 border-b border-border bg-[color-mix(in_srgb,var(--bg)_82%,transparent)] px-4 py-3 backdrop-blur-xl sm:px-6">
           <div className="flex items-center justify-between gap-4">
             <div className="lg:hidden">
               <Logo href="/" />
@@ -113,11 +114,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-7xl px-4 py-5 pb-32 sm:px-6 sm:py-7 lg:px-8 lg:pb-10">{children}</main>
+        <main className="depth-scene mx-auto max-w-7xl px-4 py-5 pb-32 sm:px-6 sm:py-7 lg:px-8 lg:pb-10">{children}</main>
       </div>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-background/90 shadow-[0_-24px_60px_-40px_rgba(0,0,0,0.9)] backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] shadow-[0_-24px_60px_-40px_rgba(0,0,0,0.9)] backdrop-blur-xl lg:hidden"
         aria-label="Mobile navigation"
       >
         <div className="flex gap-1 overflow-x-auto px-2 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -131,7 +132,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         href="/dashboard#campus-chatbot"
         aria-label="Open campus chatbot"
         title="Open campus chatbot"
-        className="focus-ring bg-brand-gradient shadow-glow fixed bottom-28 right-4 z-30 grid size-14 place-items-center rounded-full text-white transition hover:scale-105 sm:right-5 lg:bottom-6"
+        className="focus-ring press-3d animate-bob bg-brand-gradient shadow-glow fixed bottom-28 right-4 z-30 grid size-14 place-items-center rounded-full text-white sm:right-5 lg:bottom-6"
       >
         <MessageCircle className="size-6" aria-hidden />
         <span className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-background bg-green-500" aria-hidden />

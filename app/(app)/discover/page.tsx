@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { StudentCard } from "@/components/student-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,20 +10,14 @@ import { calculateMatchScore } from "@/lib/matching";
 import { useStoredProfile } from "@/lib/profile-store";
 import type { StudentProfile } from "@/lib/types";
 
-export default function DiscoverPage() {
+function DiscoverContent() {
   const { profile } = useStoredProfile();
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get("q")?.trim() ?? "");
   const [connectionType, setConnectionType] = useState("All");
   const [studyStyle, setStudyStyle] = useState("All");
   const [remoteProfiles, setRemoteProfiles] = useState<StudentProfile[]>([]);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
-
-  useEffect(() => {
-    const requestedQuery = new URLSearchParams(window.location.search).get("q")?.trim() ?? "";
-    if (requestedQuery) {
-      setQuery(requestedQuery);
-    }
-  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -62,9 +57,10 @@ export default function DiscoverPage() {
   }, [connectionType, discoverProfiles, profile, query, studyStyle]);
 
   return (
-    <div className="grid gap-6">
+    <div className="depth-scene grid gap-6">
       <div>
-        <h1 className="text-3xl font-bold text-navy">Discover Students</h1>
+        <p className="eyebrow">Find classmates</p>
+        <h1 className="mt-1 text-3xl font-black text-navy">Discover Students</h1>
         <p className="mt-2 text-muted-foreground">Filter by university, major, course, country, language, interest, connection type, student status, and study style.</p>
       </div>
       <Card>
@@ -96,12 +92,12 @@ export default function DiscoverPage() {
         </CardContent>
       </Card>
       {isLoadingProfiles && (
-        <p className="rounded-md border border-border bg-white p-3 text-sm text-muted-foreground">
+        <p className="rounded-xl border border-border bg-white/[0.03] p-4 text-sm text-muted-foreground">
           Loading community profiles from UniBridge...
         </p>
       )}
       {!isLoadingProfiles && matches.length === 0 && (
-        <p className="rounded-md border border-border bg-white p-4 text-sm text-muted-foreground">
+        <p className="rounded-xl border border-border bg-white/[0.03] p-4 text-sm text-muted-foreground">
           No real student profiles found yet. Once students sign up and complete onboarding, they will appear here.
         </p>
       )}
@@ -109,5 +105,14 @@ export default function DiscoverPage() {
         {matches.map(({ student, match }) => <StudentCard key={student.id} student={student} match={match} />)}
       </div>
     </div>
+  );
+}
+
+export default function DiscoverPage() {
+  // useSearchParams needs a Suspense boundary while this route is prerendered.
+  return (
+    <Suspense fallback={<p className="text-sm text-muted-foreground">Loading Discover...</p>}>
+      <DiscoverContent />
+    </Suspense>
   );
 }
