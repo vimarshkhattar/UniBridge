@@ -45,7 +45,7 @@ export function AppNavLink({ href, label, mobileLabel, iconName, mobile = false 
       <Link
         href={href}
         className={cn(
-          "focus-ring flex min-w-[5.8rem] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-black transition",
+          "focus-ring nav-3d flex min-w-[5.8rem] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-black",
           active
             ? "bg-primary/20 text-white shadow-[0_12px_30px_-20px_rgba(255,59,59,0.9)]"
             : "text-muted-foreground hover:bg-white/[0.06] hover:text-white"
@@ -61,7 +61,7 @@ export function AppNavLink({ href, label, mobileLabel, iconName, mobile = false 
     <Link
       href={href}
       className={cn(
-        "focus-ring group relative flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-black transition",
+        "focus-ring nav-3d group relative flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-black",
         active
           ? "border-white/10 bg-primary/15 text-white shadow-[0_18px_42px_-30px_rgba(255,59,59,0.9)]"
           : "border-transparent text-muted-foreground hover:border-white/10 hover:bg-white/[0.055] hover:text-white"

@@ -9,7 +9,7 @@ import { groupsForEvent, useBuddyState } from "@/lib/event-buddy-store";
 export function EventBuddyActions({ eventId, eventName }: { eventId: string; eventName: string }) {
   const { state, updateState } = useBuddyState(eventId);
   const hasGroup = state.created || state.joined;
-  const groups = groupsForEvent(eventId, state);
+  const groups = groupsForEvent(state);
   const joinedGroup = groups.find((group) => group.id === state.joinedGroupId);
   const createdGroup = state.groups.find((group) => group.createdByCurrentUser);
 
