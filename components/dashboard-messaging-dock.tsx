@@ -5,7 +5,6 @@ import { ChevronDown, ChevronUp, Grip, MoreHorizontal, Search, Send, SlidersHori
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { useConnectionsState } from "@/lib/connections-store";
-import { students } from "@/lib/sample-data";
 import type { ConnectionMessage } from "@/lib/supabase/user-sync";
 import type { StudentProfile } from "@/lib/types";
 import { cn, initials } from "@/lib/utils";
@@ -72,7 +71,6 @@ export function DashboardMessagingDock() {
 
   const profileById = useMemo(() => {
     const profiles = new Map<string, StudentProfile>();
-    students.forEach((student) => profiles.set(student.id, student));
     remoteProfiles.forEach((profile) => profiles.set(profile.id, profile));
     return profiles;
   }, [remoteProfiles]);

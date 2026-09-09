@@ -3,7 +3,7 @@ import { aiAssistantSchema, connectionRequestSchema, eventBuddySchema, onboardin
 
 describe("forms and action validation", () => {
   it("validates onboarding required profile fields", () => {
-    expect(onboardingSchema.safeParse({ fullName: "Maya Iyer", university: "Stony Brook University", major: "Computer Science", academicYear: "Graduate" }).success).toBe(true);
+    expect(onboardingSchema.safeParse({ fullName: "Test Student", university: "Stony Brook University", major: "Computer Science", academicYear: "Graduate" }).success).toBe(true);
     expect(onboardingSchema.safeParse({ fullName: "", university: "", major: "", academicYear: "" }).success).toBe(false);
   });
 

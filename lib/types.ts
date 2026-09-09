@@ -38,8 +38,6 @@ export type CampusEvent = {
   location: string;
   category: string;
   organizer: string;
-  interestedCount: number;
-  buddyCount: number;
   sampleLabel: string;
 };
 

@@ -9,7 +9,7 @@ import { groupsForEvent, saveBuddyState, useBuddyState } from "@/lib/event-buddy
 export function BuddyJoinForm({ eventId, eventName }: { eventId: string; eventName: string }) {
   const router = useRouter();
   const { state } = useBuddyState(eventId);
-  const groups = groupsForEvent(eventId, state);
+  const groups = groupsForEvent(state);
 
   async function handleJoin(formData: FormData) {
     const preference = String(formData.get("preference") || "Friendly low-pressure group");

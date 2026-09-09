@@ -62,7 +62,7 @@ export default function DiscoverPage() {
   }, [connectionType, discoverProfiles, profile, query, studyStyle]);
 
   return (
-    <div className="grid gap-6">
+    <div className="depth-scene grid gap-6">
       <div>
         <h1 className="text-3xl font-bold text-navy">Discover Students</h1>
         <p className="mt-2 text-muted-foreground">Filter by university, major, course, country, language, interest, connection type, student status, and study style.</p>
