@@ -21,7 +21,7 @@ export function AuthForm({
       {isSignUp && (
         <label className="grid gap-2 text-sm font-medium text-navy">
           Full name
-          <Input name="fullName" autoComplete="name" required placeholder="Maya Iyer" />
+          <Input name="fullName" autoComplete="name" required placeholder="Your full name" />
         </label>
       )}
       <label className="grid gap-2 text-sm font-medium text-navy">

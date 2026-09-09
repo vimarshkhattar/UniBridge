@@ -12,7 +12,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   if (!event) notFound();
 
   return (
-    <div className="grid gap-6">
+    <div className="depth-scene grid gap-6">
       <Link href="/events" className="focus-ring w-fit rounded-sm text-sm font-semibold text-primary">Back to events</Link>
       <Card>
         <CardHeader>

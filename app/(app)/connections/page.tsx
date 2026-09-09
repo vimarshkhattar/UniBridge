@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/input";
 import { useConnectionsState } from "@/lib/connections-store";
 import { useDiscoverActions } from "@/lib/discover-actions-store";
-import { students } from "@/lib/sample-data";
 import type { ConnectionMessage } from "@/lib/supabase/user-sync";
 import type { StudentProfile } from "@/lib/types";
 import { cn, initials } from "@/lib/utils";
@@ -58,7 +57,6 @@ export default function ConnectionsPage() {
 
   const profileById = useMemo(() => {
     const profiles = new Map<string, StudentProfile>();
-    students.forEach((student) => profiles.set(student.id, student));
     remoteProfiles.forEach((profile) => profiles.set(profile.id, profile));
     return profiles;
   }, [remoteProfiles]);
@@ -168,7 +166,7 @@ export default function ConnectionsPage() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="depth-scene grid gap-6">
       <div>
         <h1 className="text-3xl font-bold text-navy">Connections</h1>
         <p className="mt-2 text-muted-foreground">Manage accepted connections, pending requests, saved profiles, and conversations with people who accepted.</p>
@@ -228,7 +226,7 @@ export default function ConnectionsPage() {
       </div>
 
       {accepted.length > 0 && (
-        <Card className="overflow-hidden">
+        <Card className="tilt-none overflow-hidden">
           <div className="flex items-center justify-between gap-3 border-b border-border bg-black px-4 py-3">
             <div>
               <CardTitle>Messaging</CardTitle>

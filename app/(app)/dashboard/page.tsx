@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Bot, CalendarDays, CheckCircle2, Compass, MessageSquareText, ShieldCheck, UserRound, UsersRound } from "lucide-react";
@@ -9,25 +10,55 @@ import { VerifiedBadge } from "@/components/verified-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConnectionsState } from "@/lib/connections-store";
-import { events, guides, students } from "@/lib/sample-data";
+import { nextEvent } from "@/lib/events";
+import { useClientNow } from "@/lib/use-client-now";
+import { guides } from "@/lib/sample-data";
 import { calculateMatchScore } from "@/lib/matching";
 import { calculateProfileCompletion, useStoredProfile } from "@/lib/profile-store";
+import type { StudentProfile } from "@/lib/types";
 import { initials } from "@/lib/utils";
+import { formatEventDate } from "@/lib/date-format";
 
 export default function DashboardPage() {
   const { profile } = useStoredProfile();
   const { state: connections } = useConnectionsState();
+  const [remoteProfiles, setRemoteProfiles] = useState<StudentProfile[]>([]);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
   const firstName = profile.fullName.split(" ")[0] || "there";
   const profileCompletion = calculateProfileCompletion(profile);
-  const recommendations = students
-    .filter((student) => student.id !== profile.id)
-    .map((student) => ({ student, score: calculateMatchScore(profile, student).total }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
+
+  useEffect(() => {
+    let isActive = true;
+
+    void import("@/lib/supabase/user-sync").then(async ({ loadRemoteDiscoverProfiles }) => {
+      const profiles = await loadRemoteDiscoverProfiles();
+      if (isActive) {
+        setRemoteProfiles(profiles);
+        setIsLoadingProfiles(false);
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const now = useClientNow();
+  const upcomingEvent = useMemo(() => (now === null ? undefined : nextEvent(now)), [now]);
+
+  const recommendations = useMemo(
+    () =>
+      remoteProfiles
+        .filter((student) => student.id !== profile.id && student.email.toLowerCase() !== profile.email.toLowerCase())
+        .map((student) => ({ student, score: calculateMatchScore(profile, student).total }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3),
+    [profile, remoteProfiles]
+  );
 
   return (
-    <div className="grid gap-6">
-      <section className="card-surface p-6">
+    <div className="depth-scene grid gap-6">
+      <section className="card-surface tilt-card p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
             {profile.avatarUrl ? (
@@ -58,20 +89,23 @@ export default function DashboardPage() {
               <span>{profileCompletion}%</span>
             </div>
             <div className="mt-2 h-3 rounded-full bg-white/10">
-              <div className="h-3 rounded-full bg-primary" style={{ width: `${profileCompletion}%` }} />
+              <div className="h-3 rounded-full bg-primary transition-[width] duration-700" style={{ width: `${profileCompletion}%` }} />
             </div>
           </div>
         </div>
       </section>
 
       <section className="grid gap-5 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card className="tilt-card lg:col-span-2">
           <CardHeader>
             <CardTitle>About UniBridge</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
             <p className="text-sm leading-6 text-muted-foreground">
-              UniBridge helps international students find compatible study partners, friends, event buddies, and practical guidance for university life. It focuses on the moments that can feel awkward at first: finding someone from class, attending campus events, asking for help, and writing respectful messages.
+              UniBridge is for every new college student and transfer student who runs into problems when arriving at a new
+              university. Starting somewhere unfamiliar is hard: you do not know anyone in your classes, you are not sure how
+              things work, and asking for help feels awkward. UniBridge helps you find compatible study partners, friends, and
+              event buddies, and gives you practical guidance for the moments that feel unclear at first.
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
               {[
@@ -79,7 +113,7 @@ export default function DashboardPage() {
                 [CalendarDays, "Event buddies", "Join small groups so campus events feel easier to attend."],
                 [MessageSquareText, "Message help", "Draft messages and ask campus-life questions in simple language."]
               ].map(([Icon, title, text]) => (
-                <div key={String(title)} className="rounded-md border border-border bg-muted p-3">
+                <div key={String(title)} className="tilt-card rounded-md border border-border bg-muted p-3">
                   <Icon className="size-5 text-primary" aria-hidden />
                   <p className="mt-2 font-semibold text-navy">{String(title)}</p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">{String(text)}</p>
@@ -89,7 +123,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="tilt-card">
           <CardHeader>
             <CardTitle>How it works</CardTitle>
           </CardHeader>
@@ -120,16 +154,28 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-5 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card className="tilt-card lg:col-span-2">
           <CardHeader>
             <CardTitle>Recommended matches</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3">
+            {isLoadingProfiles && (
+              <p className="rounded-md border border-border bg-muted p-4 text-sm text-muted-foreground">
+                Loading student profiles...
+              </p>
+            )}
+            {!isLoadingProfiles && recommendations.length === 0 && (
+              <p className="rounded-md border border-border bg-muted p-4 text-sm text-muted-foreground">
+                No matches to show yet. Recommendations appear here as other students sign up and complete their profiles.
+              </p>
+            )}
             {recommendations.map(({ student, score }) => (
-              <div key={student.id} className="flex items-center justify-between rounded-md border border-border p-4">
+              <div key={student.id} className="tilt-card flex items-center justify-between rounded-md border border-border p-4">
                 <div>
                   <p className="font-semibold text-navy">{student.fullName}</p>
-                  <p className="text-sm text-muted-foreground">{student.major} · {student.courses.slice(0, 2).join(", ")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {[student.major, student.courses.slice(0, 2).join(", ")].filter(Boolean).join(" · ")}
+                  </p>
                 </div>
                 <span className="rounded-full bg-red-50 px-3 py-1 text-sm font-bold text-red-800">{score}%</span>
               </div>
@@ -138,7 +184,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="tilt-card">
           <CardHeader>
             <CardTitle>Quick actions</CardTitle>
           </CardHeader>
@@ -151,15 +197,21 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-5 lg:grid-cols-3">
-        <Card>
-          <CardHeader><CardTitle>Upcoming event</CardTitle></CardHeader>
+        <Card className="tilt-card">
+          <CardHeader><CardTitle>Next event</CardTitle></CardHeader>
           <CardContent>
-            <p className="font-semibold text-navy">{events[0].name}</p>
-            <p className="mt-2 text-sm text-muted-foreground">{events[0].location}</p>
-            <p className="mt-3 text-sm">{events[0].buddyCount} students looking for a buddy</p>
+            {upcomingEvent ? (
+              <>
+                <p className="font-semibold text-navy">{upcomingEvent.name}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{upcomingEvent.location}</p>
+                <p className="mt-3 text-sm text-muted-foreground">{formatEventDate(upcomingEvent.startsAt)}</p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">No upcoming events on the calendar right now.</p>
+            )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="tilt-card">
           <CardHeader><CardTitle>Connections</CardTitle></CardHeader>
           <CardContent className="flex items-center gap-3">
             <CheckCircle2 className="size-8 text-primary" />
@@ -169,7 +221,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="tilt-card">
           <CardHeader><CardTitle>Featured guide</CardTitle></CardHeader>
           <CardContent>
             <p className="font-semibold text-navy">{guides[0].title}</p>

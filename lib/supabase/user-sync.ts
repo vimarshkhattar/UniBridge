@@ -1,7 +1,7 @@
 "use client";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { events, students } from "@/lib/sample-data";
+import { events } from "@/lib/sample-data";
 import type { BuddyGroupDetails, BuddyState } from "@/lib/event-buddy-store";
 import { defaultStoredProfile, STONY_BROOK_UNIVERSITY, type StoredProfile } from "@/lib/profile-store";
 import type { ConnectionType } from "@/lib/types";
@@ -107,14 +107,18 @@ async function universityId(name: string) {
 async function profileIdFromStudentId(studentId: string) {
   const supabase = client();
   if (!supabase) return null;
-  if (isUuid(studentId)) return studentId;
 
-  const sampleStudent = students.find((student) => student.id === studentId);
-  const email = sampleStudent?.email;
-  if (!email) return null;
+  // Every student in the app is a real signed-up profile, so the id is its uuid.
+  return isUuid(studentId) ? studentId : null;
+}
 
-  const { data } = await supabase.from("profiles").select("id").eq("email", email).maybeSingle();
-  return data?.id ?? null;
+async function profileNameFromStudentId(studentId: string) {
+  const supabase = client();
+  const profileId = await profileIdFromStudentId(studentId);
+  if (!supabase || !profileId) return "Student";
+
+  const { data } = await supabase.from("profiles").select("full_name").eq("id", profileId).maybeSingle();
+  return (data as { full_name: string | null } | null)?.full_name || "Student";
 }
 
 async function connectionIdForStudent(studentId: string) {
@@ -159,8 +163,24 @@ async function findConnectionId(currentUserId: string, otherUserId: string) {
   return ((data ?? []) as ConnectionRow[])[0]?.id ?? null;
 }
 
-function localStudentIdFromProfile(profile: ProfileIdentityRow) {
-  return students.find((student) => student.email === profile.email)?.id ?? profile.id;
+const AVATAR_COLORS = [
+  "bg-primary",
+  "bg-rose-600",
+  "bg-sky-700",
+  "bg-emerald-700",
+  "bg-amber-600",
+  "bg-indigo-700",
+  "bg-teal-700",
+  "bg-violet-700"
+];
+
+/** Gives each real profile a stable avatar colour derived from its own id. */
+function avatarColorForProfile(profileId: string, fallbackIndex: number) {
+  const seed = profileId
+    ? Array.from(profileId).reduce((total, character) => total + character.charCodeAt(0), 0)
+    : fallbackIndex;
+
+  return AVATAR_COLORS[seed % AVATAR_COLORS.length];
 }
 
 async function localStudentIdsFromProfileIds(profileIds: string[]) {
@@ -169,7 +189,7 @@ async function localStudentIdsFromProfileIds(profileIds: string[]) {
 
   const { data } = await supabase.from("profiles").select("id,email,full_name").in("id", profileIds);
   return ((data ?? []) as ProfileIdentityRow[])
-    .map(localStudentIdFromProfile)
+    .map((profile) => profile.id)
     .filter((id): id is string => Boolean(id));
 }
 
@@ -305,7 +325,7 @@ export async function loadRemoteDiscoverProfiles(): Promise<StoredProfile[]> {
     fullName: profile.full_name ?? "",
     email: profile.email,
     university: universityName(profile.universities) ?? STONY_BROOK_UNIVERSITY,
-    avatarColor: students[index % students.length]?.avatarColor ?? defaultStoredProfile.avatarColor,
+    avatarColor: avatarColorForProfile(profile.id, index),
     avatarUrl: profile.avatar_url ?? undefined,
     major: profile.major ?? "",
     academicYear: (profile.academic_year ?? "") as StoredProfile["academicYear"],
@@ -475,7 +495,7 @@ export async function loadRemoteConnectionMessages(studentId: string): Promise<C
   const connectionId = await connectionIdForStudent(studentId);
   if (!supabase || !user || !connectionId) return [];
 
-  const otherStudent = students.find((student) => student.id === studentId);
+  const otherStudentName = await profileNameFromStudentId(studentId);
   const { data } = await supabase
     .from("connection_messages")
     .select("id,sender_id,body,created_at")
@@ -486,7 +506,7 @@ export async function loadRemoteConnectionMessages(studentId: string): Promise<C
     id: message.id,
     body: message.body,
     createdAt: message.created_at,
-    senderName: message.sender_id === user.id ? "You" : otherStudent?.fullName ?? "Student",
+    senderName: message.sender_id === user.id ? "You" : otherStudentName,
     isOwn: message.sender_id === user.id
   }));
 }
@@ -529,7 +549,7 @@ export async function subscribeToRemoteConnectionMessages(
   const connectionId = await connectionIdForStudent(studentId);
   if (!supabase || !user || !connectionId) return () => {};
 
-  const otherStudent = students.find((student) => student.id === studentId);
+  const otherStudentName = await profileNameFromStudentId(studentId);
   const channel = supabase
     .channel(`connection-messages-${connectionId}`)
     .on(
@@ -541,7 +561,7 @@ export async function subscribeToRemoteConnectionMessages(
           id: message.id,
           body: message.body,
           createdAt: message.created_at,
-          senderName: message.sender_id === user.id ? "You" : otherStudent?.fullName ?? "Student",
+          senderName: message.sender_id === user.id ? "You" : otherStudentName,
           isOwn: message.sender_id === user.id
         });
       }

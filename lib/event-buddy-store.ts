@@ -137,35 +137,13 @@ export function useBuddyState(eventId: string) {
   return { state, updateState };
 }
 
-export function starterBuddyGroups(eventId: string): BuddyGroupDetails[] {
-  return [
-    {
-      id: `${eventId}-calm`,
-      title: "Calm first-timers group",
-      basis: "First-time event attendees",
-      description: "A low-pressure group for students who want to arrive together, introduce themselves, and avoid walking in alone.",
-      maxMembers: 4,
-      meetingPreference: "Meet near the event entrance",
-      note: "Good for students who feel awkward attending events alone.",
-      members: ["Sofia Martinez", "Chen Wei"]
-    },
-    {
-      id: `${eventId}-career`,
-      title: "Career and networking group",
-      basis: "Same major or career interest",
-      description: "A group for students who want to talk about classes, internships, career prep, and useful campus resources after the event.",
-      maxMembers: 5,
-      meetingPreference: "Meet 10 minutes before the event",
-      note: "Bring one question you want to ask someone at the event.",
-      members: ["Daniel Kim", "Amina Hassan"]
-    }
-  ];
-}
-
-export function groupsForEvent(eventId: string, state: BuddyState) {
+/**
+ * Buddy groups come only from real students. Nothing is pre-populated, so an
+ * event shows an empty list until someone actually starts a group.
+ */
+export function groupsForEvent(state: BuddyState) {
   const groupsById = new Map<string, BuddyGroupDetails>();
 
-  starterBuddyGroups(eventId).forEach((group) => groupsById.set(group.id, group));
   state.groups.forEach((group) => groupsById.set(group.id, group));
 
   return Array.from(groupsById.values()).map((group) => (
