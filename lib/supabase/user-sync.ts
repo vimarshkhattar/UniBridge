@@ -808,3 +808,171 @@ export async function loadRemoteBuddyState(eventId: string): Promise<BuddyState 
     groupMessages: {}
   };
 }
+
+/* ---------------------------------------------------------------- buddies -- */
+
+export type BuddySeeker = {
+  id: string;
+  fullName: string;
+  major: string;
+  note: string;
+  isCurrentUser: boolean;
+};
+
+/**
+ * Every student with an open buddy request for this event, so a request made by
+ * one person is visible to everyone else looking at the same event.
+ */
+export async function loadRemoteEventBuddySeekers(eventId: string): Promise<BuddySeeker[]> {
+  const supabase = client();
+  const user = await currentUser();
+  const eventUuid = await eventUuidFromLocalId(eventId);
+  if (!supabase || !eventUuid) return [];
+
+  const { data: requests } = await supabase
+    .from("event_buddy_requests")
+    .select("user_id,note")
+    .eq("event_id", eventUuid)
+    .eq("status", "open");
+
+  // Attendees who ticked "I need a buddy" count too, even without a request row.
+  const { data: attendees } = await supabase
+    .from("event_attendees")
+    .select("user_id")
+    .eq("event_id", eventUuid)
+    .eq("needs_buddy", true);
+
+  const noteByUser = new Map<string, string>();
+  ((requests ?? []) as { user_id: string; note: string | null }[]).forEach((row) => {
+    noteByUser.set(row.user_id, row.note ?? "");
+  });
+  ((attendees ?? []) as { user_id: string }[]).forEach((row) => {
+    if (!noteByUser.has(row.user_id)) noteByUser.set(row.user_id, "");
+  });
+
+  const userIds = Array.from(noteByUser.keys());
+  if (!userIds.length) return [];
+
+  const { data: profiles } = await supabase.from("profiles").select("id,full_name,major").in("id", userIds);
+
+  return ((profiles ?? []) as { id: string; full_name: string | null; major: string | null }[]).map((profile) => ({
+    id: profile.id,
+    fullName: profile.full_name || "Student",
+    major: profile.major ?? "",
+    note: noteByUser.get(profile.id) ?? "",
+    isCurrentUser: profile.id === user?.id
+  }));
+}
+
+/** Clears the current student's buddy request for an event. */
+export async function cancelRemoteBuddyRequest(eventId: string) {
+  const supabase = client();
+  const user = await currentUser();
+  const eventUuid = await eventUuidFromLocalId(eventId);
+  if (!supabase || !user || !eventUuid) return;
+
+  await supabase.from("event_buddy_requests").delete().eq("event_id", eventUuid).eq("user_id", user.id);
+  await supabase
+    .from("event_attendees")
+    .update({ needs_buddy: false })
+    .eq("event_id", eventUuid)
+    .eq("user_id", user.id);
+}
+
+/* --------------------------------------------------- buddy group messages -- */
+
+export type GroupMessage = {
+  id: string;
+  body: string;
+  createdAt: string;
+  senderName: string;
+  isOwn: boolean;
+};
+
+type GroupMessageRow = { id: string; sender_id: string; body: string; created_at: string };
+
+async function groupSenderNames(senderIds: string[]) {
+  const supabase = client();
+  const names = new Map<string, string>();
+  if (!supabase || !senderIds.length) return names;
+
+  const { data } = await supabase.from("profiles").select("id,full_name").in("id", Array.from(new Set(senderIds)));
+  ((data ?? []) as { id: string; full_name: string | null }[]).forEach((profile) => {
+    names.set(profile.id, profile.full_name || "Student");
+  });
+  return names;
+}
+
+export async function loadRemoteGroupMessages(groupId: string): Promise<GroupMessage[]> {
+  const supabase = client();
+  const user = await currentUser();
+  if (!supabase || !user || !isUuid(groupId)) return [];
+
+  const { data } = await supabase
+    .from("event_buddy_group_messages")
+    .select("id,sender_id,body,created_at")
+    .eq("group_id", groupId)
+    .order("created_at", { ascending: true });
+
+  const rows = (data ?? []) as GroupMessageRow[];
+  const names = await groupSenderNames(rows.map((row) => row.sender_id));
+
+  return rows.map((row) => ({
+    id: row.id,
+    body: row.body,
+    createdAt: row.created_at,
+    senderName: row.sender_id === user.id ? "You" : names.get(row.sender_id) ?? "Student",
+    isOwn: row.sender_id === user.id
+  }));
+}
+
+export async function sendRemoteGroupMessage(groupId: string, body: string): Promise<GroupMessage | null> {
+  const supabase = client();
+  const user = await currentUser();
+  const trimmed = body.trim();
+  if (!supabase || !user || !isUuid(groupId) || !trimmed) return null;
+
+  const { data, error } = await supabase
+    .from("event_buddy_group_messages")
+    .insert({ group_id: groupId, sender_id: user.id, body: trimmed })
+    .select("id,sender_id,body,created_at")
+    .single();
+
+  if (error || !data) return null;
+
+  const row = data as GroupMessageRow;
+  return { id: row.id, body: row.body, createdAt: row.created_at, senderName: "You", isOwn: true };
+}
+
+export async function subscribeToRemoteGroupMessages(
+  groupId: string,
+  onMessage: (message: GroupMessage) => void
+): Promise<() => void> {
+  const supabase = client();
+  const user = await currentUser();
+  if (!supabase || !user || !isUuid(groupId)) return () => {};
+
+  const channel = supabase
+    .channel(`buddy-group-messages-${groupId}`)
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "event_buddy_group_messages", filter: `group_id=eq.${groupId}` },
+      (payload) => {
+        const row = payload.new as GroupMessageRow;
+        void groupSenderNames([row.sender_id]).then((names) => {
+          onMessage({
+            id: row.id,
+            body: row.body,
+            createdAt: row.created_at,
+            senderName: row.sender_id === user.id ? "You" : names.get(row.sender_id) ?? "Student",
+            isOwn: row.sender_id === user.id
+          });
+        });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    void supabase.removeChannel(channel);
+  };
+}
