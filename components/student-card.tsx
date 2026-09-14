@@ -1,9 +1,11 @@
 "use client";
 
-import { Bookmark, Send } from "lucide-react";
+import Link from "next/link";
+import { Bookmark, MessageSquare, Send } from "lucide-react";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useConnectionsState } from "@/lib/connections-store";
 import { useDiscoverActions } from "@/lib/discover-actions-store";
 import { initials } from "@/lib/utils";
 import type { MatchBreakdown } from "@/lib/matching";
@@ -11,8 +13,10 @@ import type { StudentProfile } from "@/lib/types";
 
 export function StudentCard({ student, match }: { student: StudentProfile; match: MatchBreakdown }) {
   const { actions, sendRequest, saveProfile } = useDiscoverActions();
+  const { state: connections } = useConnectionsState();
   const requestSent = actions.requestedIds.includes(student.id);
   const profileSaved = actions.savedIds.includes(student.id);
+  const isConnected = connections.acceptedIds.includes(student.id);
 
   return (
     <Card>
@@ -40,7 +44,7 @@ export function StudentCard({ student, match }: { student: StudentProfile; match
           <p><span className="font-semibold text-navy">Interests:</span> {student.interests.join(", ")}</p>
           <p><span className="font-semibold text-navy">Looking for:</span> {student.connectionTypes.join(", ")}</p>
         </div>
-        <details className="rounded-md bg-muted p-3 text-sm">
+        <details className="rounded-xl border border-border bg-white/[0.03] p-3 text-sm">
           <summary className="cursor-pointer font-semibold text-navy">Why this score?</summary>
           <div className="mt-2 grid gap-1 text-muted-foreground">
             <span>Same university: {match.sameUniversity}</span>
@@ -52,17 +56,31 @@ export function StudentCard({ student, match }: { student: StudentProfile; match
             <span>Activities: {match.preferredActivities}</span>
           </div>
         </details>
-        {(requestSent || profileSaved) && (
-          <p className="rounded-md border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800">
-            {requestSent && profileSaved && "Connection request sent. This profile has been saved in the Connections tab."}
-            {requestSent && !profileSaved && "Connection request sent."}
-            {!requestSent && profileSaved && "This profile has been saved in the Connections tab."}
+        {isConnected ? (
+          <p className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800">
+            You are already connected with {student.fullName.split(" ")[0]}. Open Connections to start chatting.
           </p>
+        ) : (
+          (requestSent || profileSaved) && (
+            <p className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800">
+              {requestSent && profileSaved && "Connection request sent. This profile has been saved in the Connections tab."}
+              {requestSent && !profileSaved && "Connection request sent."}
+              {!requestSent && profileSaved && "This profile has been saved in the Connections tab."}
+            </p>
+          )
         )}
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button type="button" onClick={() => sendRequest(student.id)} disabled={requestSent}>
-            <Send className="size-4" /> {requestSent ? "Request sent" : "Send request"}
-          </Button>
+          {isConnected ? (
+            <Link href={`/connections?chat=${student.id}`} className="sm:flex-1">
+              <Button type="button" className="w-full">
+                <MessageSquare className="size-4" /> Message in Connections
+              </Button>
+            </Link>
+          ) : (
+            <Button type="button" onClick={() => sendRequest(student.id)} disabled={requestSent}>
+              <Send className="size-4" /> {requestSent ? "Request sent" : "Send request"}
+            </Button>
+          )}
           <Button type="button" variant="secondary" onClick={() => saveProfile(student.id)} disabled={profileSaved}>
             <Bookmark className="size-4" /> {profileSaved ? "Saved" : "Save profile"}
           </Button>

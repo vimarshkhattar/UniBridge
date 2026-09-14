@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { BookmarkX, MessageSquare, Send, Trash2, UserCheck, UserX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,10 +32,13 @@ function ProfileAvatar({ profile, size = "md" }: { profile: StudentProfile; size
   );
 }
 
-export default function ConnectionsPage() {
+function ConnectionsContent() {
   const { state, acceptRequest, declineRequest, removeConnection } = useConnectionsState();
   const { actions, cancelRequest, removeSavedProfile } = useDiscoverActions();
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  // Discover links here as /connections?chat=<id> to open that thread directly.
+  const requestedChatId = searchParams.get("chat");
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(requestedChatId);
   const [remoteProfiles, setRemoteProfiles] = useState<StudentProfile[]>([]);
   const [removedName, setRemovedName] = useState("");
   const [messages, setMessages] = useState<ConnectionMessage[]>([]);
@@ -88,16 +92,18 @@ export default function ConnectionsPage() {
   );
   const activeConversation = activeConversationId ? profileById.get(activeConversationId) : undefined;
 
-  async function openConversation(studentId: string) {
+  function openConversation(studentId: string) {
     setActiveConversationId(studentId);
-    setMessages([]);
-    setIsLoadingMessages(true);
     setMessageError("");
+  }
 
-    const { loadRemoteConnectionMessages } = await import("@/lib/supabase/user-sync");
-    const remoteMessages = await loadRemoteConnectionMessages(studentId);
-    setMessages(remoteMessages);
-    setIsLoadingMessages(false);
+  // Switching threads clears the old messages in the same commit as the switch,
+  // rather than flashing the previous conversation for a frame.
+  const [loadedConversationId, setLoadedConversationId] = useState(activeConversationId);
+  if (loadedConversationId !== activeConversationId) {
+    setLoadedConversationId(activeConversationId);
+    setMessages([]);
+    setIsLoadingMessages(Boolean(activeConversationId));
   }
 
   useEffect(() => {
@@ -106,20 +112,25 @@ export default function ConnectionsPage() {
     let cleanup: (() => void) | undefined;
     let isActive = true;
 
-    void import("@/lib/supabase/user-sync").then(async ({ subscribeToRemoteConnectionMessages }) => {
-      const unsubscribe = await subscribeToRemoteConnectionMessages(activeConversationId, (message) => {
-        setMessages((currentMessages) => {
-          if (currentMessages.some((currentMessage) => currentMessage.id === message.id)) return currentMessages;
-          return [...currentMessages, message];
-        });
-      });
+    void import("@/lib/supabase/user-sync").then(
+      async ({ loadRemoteConnectionMessages, subscribeToRemoteConnectionMessages }) => {
+        const remoteMessages = await loadRemoteConnectionMessages(activeConversationId);
+        if (!isActive) return;
 
-      if (isActive) {
-        cleanup = unsubscribe;
-      } else {
-        unsubscribe();
+        setMessages(remoteMessages);
+        setIsLoadingMessages(false);
+
+        const unsubscribe = await subscribeToRemoteConnectionMessages(activeConversationId, (message) => {
+          setMessages((currentMessages) => {
+            if (currentMessages.some((currentMessage) => currentMessage.id === message.id)) return currentMessages;
+            return [...currentMessages, message];
+          });
+        });
+
+        if (isActive) cleanup = unsubscribe;
+        else unsubscribe();
       }
-    });
+    );
 
     return () => {
       isActive = false;
@@ -129,7 +140,7 @@ export default function ConnectionsPage() {
 
   async function handleAcceptRequest(studentId: string) {
     await acceptRequest(studentId);
-    await openConversation(studentId);
+    openConversation(studentId);
   }
 
   function handleDeclineRequest(studentId: string) {
@@ -196,7 +207,7 @@ export default function ConnectionsPage() {
                   <p className="text-sm text-muted-foreground">{student.connectionTypes.slice(0, 2).join(", ")}</p>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9.5rem] xl:w-[25rem]">
-                  <Button variant="secondary" className="w-full whitespace-nowrap" onClick={() => void openConversation(student.id)}>
+                  <Button variant="secondary" className="w-full whitespace-nowrap" onClick={() => openConversation(student.id)}>
                     <MessageSquare className="size-4" /> Start Conversation
                   </Button>
                   <Button variant="danger" className="w-full whitespace-nowrap" onClick={() => handleRemoveConnection(student.id, student.fullName)}>
@@ -261,7 +272,7 @@ export default function ConnectionsPage() {
                     <button
                       key={student.id}
                       type="button"
-                      onClick={() => void openConversation(student.id)}
+                      onClick={() => openConversation(student.id)}
                       className={cn(
                         "flex w-full items-center gap-3 border-b border-border px-3 py-3 text-left transition",
                         activeConversationId === student.id ? "bg-[var(--red-soft)]" : "bg-[var(--bg-sunken)] hover:bg-white/[0.05]"
@@ -401,5 +412,14 @@ export default function ConnectionsPage() {
       </Card>
 
     </div>
+  );
+}
+
+export default function ConnectionsPage() {
+  // useSearchParams needs a Suspense boundary while this route is prerendered.
+  return (
+    <Suspense fallback={<p className="text-sm text-muted-foreground">Loading Connections...</p>}>
+      <ConnectionsContent />
+    </Suspense>
   );
 }

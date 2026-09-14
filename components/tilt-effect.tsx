@@ -2,10 +2,10 @@
 
 import { useEffect } from "react";
 
-// Deliberately gentle: a few degrees reads as depth without the page shifting
-// around under the cursor.
-const MAX_TILT_DEGREES = 3;
-const HOVER_LIFT_PX = -3;
+// Barely-there depth: about one degree of tilt. Enough that a card feels
+// physical under the cursor, not enough to read as an animation.
+const MAX_TILT_DEGREES = 1.1;
+const HOVER_LIFT_PX = -2;
 
 /**
  * Drives the depth effects declared in globals.css:

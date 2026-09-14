@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/input";
 import { formatEventDate } from "@/lib/date-format";
 import { groupsForEvent, useBuddyState } from "@/lib/event-buddy-store";
 import { useEventActivity } from "@/lib/event-activity-store";
-import { eventsByRelevance, isPastEvent } from "@/lib/events";
+import { isPastEvent, pastEvents, upcomingEvents } from "@/lib/events";
 import { events } from "@/lib/sample-data";
 import { useClientNow } from "@/lib/use-client-now";
 
@@ -102,14 +102,12 @@ export default function EventsPage() {
 
   const categories = Array.from(new Set(events.map((event) => event.category))).sort();
 
-  const ordered = useMemo(() => (now === null ? events : eventsByRelevance(now)), [now]);
-  const filtered = useMemo(
-    () =>
-      ordered
-        .filter((event) => category === "All" || event.category === category)
-        .filter((event) => showPast || now === null || !isPastEvent(event, now)),
-    [category, now, ordered, showPast]
-  );
+  // Two distinct views rather than one blended list: upcoming, or past only.
+  const filtered = useMemo(() => {
+    const ordered = now === null ? events : showPast ? pastEvents(now) : upcomingEvents(now);
+
+    return ordered.filter((event) => category === "All" || event.category === category);
+  }, [category, now, showPast]);
 
   const pastCount = now === null ? 0 : events.filter((event) => isPastEvent(event, now)).length;
   const joinedEvents = events.filter((event) => activity.joinedIds.includes(event.id));
@@ -137,11 +135,12 @@ export default function EventsPage() {
       {pastCount > 0 && (
         <div className="flex flex-col gap-3 rounded-xl border border-border bg-white/[0.03] p-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>
-            {pastCount} {pastCount === 1 ? "event has" : "events have"} already passed this semester and{" "}
-            {pastCount === 1 ? "is" : "are"} hidden.
+            {showPast
+              ? `Showing the ${pastCount} ${pastCount === 1 ? "event that has" : "events that have"} already happened this semester.`
+              : `${pastCount} ${pastCount === 1 ? "event has" : "events have"} already passed this semester.`}
           </p>
           <Button variant="secondary" onClick={() => setShowPast((current) => !current)}>
-            {showPast ? "Hide past events" : "Show past events"}
+            {showPast ? "Back to upcoming events" : "Show past events"}
           </Button>
         </div>
       )}
@@ -162,7 +161,7 @@ export default function EventsPage() {
 
       {filtered.length === 0 && (
         <p className="rounded-xl border border-border bg-white/[0.03] p-4 text-sm text-muted-foreground">
-          No upcoming events in this category right now.
+          {showPast ? "No past events in this category." : "No upcoming events in this category right now."}
         </p>
       )}
 
