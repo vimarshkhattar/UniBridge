@@ -472,12 +472,12 @@ textarea::placeholder {
 
 @layer utilities {
   .depth-scene {
-    perspective: 1800px;
+    perspective: 3000px;
     perspective-origin: 50% 30%;
   }
 
   .depth-scene-near {
-    perspective: 1200px;
+    perspective: 2000px;
   }
 
   .preserve-3d {
@@ -490,7 +490,7 @@ textarea::placeholder {
     --tilt-lift: 0px;
     --tilt-glow: 0;
     position: relative;
-    transform: perspective(1400px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translate3d(0, var(--tilt-lift), 0);
+    transform: perspective(2600px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translate3d(0, var(--tilt-lift), 0);
     transform-style: preserve-3d;
     transition:
       transform 300ms var(--ease),
@@ -513,7 +513,7 @@ textarea::placeholder {
     border-radius: inherit;
     background: radial-gradient(
       20rem circle at var(--tilt-glow-x, 50%) var(--tilt-glow-y, 50%),
-      rgba(255, 80, 90, 0.09),
+      rgba(255, 80, 90, 0.05),
       transparent 60%
     );
     opacity: var(--tilt-glow);
@@ -531,15 +531,15 @@ textarea::placeholder {
   }
 
   .layer-front {
-    transform: translateZ(16px);
+    transform: translateZ(7px);
   }
 
   .layer-mid {
-    transform: translateZ(9px);
+    transform: translateZ(4px);
   }
 
   .layer-back {
-    transform: translateZ(-8px);
+    transform: translateZ(-4px);
   }
 
   .press-3d {
@@ -547,11 +547,11 @@ textarea::placeholder {
   }
 
   .press-3d:hover {
-    transform: translate3d(0, -1px, 4px);
+    transform: translate3d(0, -1px, 0);
   }
 
   .press-3d:active {
-    transform: translate3d(0, 1px, -2px);
+    transform: translate3d(0, 1px, 0);
   }
 
   .press-3d:disabled:hover,
@@ -561,7 +561,7 @@ textarea::placeholder {
 
   .reveal-3d {
     opacity: 0;
-    transform: perspective(1600px) rotateX(4deg) translate3d(0, 16px, -20px);
+    transform: translate3d(0, 10px, 0);
     transition:
       opacity 620ms var(--ease),
       transform 620ms var(--ease);
@@ -619,7 +619,7 @@ textarea::placeholder {
   }
 
   .group:hover .logo-mark {
-    transform: perspective(700px) rotateY(-10deg) rotateX(5deg) translateZ(5px);
+    transform: perspective(900px) rotateY(-6deg) rotateX(3deg);
   }
 
   .nav-3d {
@@ -627,7 +627,7 @@ textarea::placeholder {
   }
 
   .nav-3d:hover {
-    transform: translate3d(2px, -1px, 0);
+    transform: translate3d(1px, 0, 0);
   }
 }
 
@@ -1032,11 +1032,11 @@ textarea::placeholder {
   }
 
   33% {
-    transform: translate3d(5px, -8px, 12px) rotateX(2.5deg) rotateY(-3deg);
+    transform: translate3d(3px, -5px, 0) rotateX(1deg) rotateY(-1.2deg);
   }
 
   66% {
-    transform: translate3d(-5px, 6px, -8px) rotateX(-2deg) rotateY(3deg);
+    transform: translate3d(-3px, 4px, 0) rotateX(-0.8deg) rotateY(1.2deg);
   }
 }
 
