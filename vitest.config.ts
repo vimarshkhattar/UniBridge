@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -8,7 +9,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": new URL("./", import.meta.url).pathname
+      // fileURLToPath, not URL.pathname: the latter percent-encodes, so a
+      // folder containing a space ("My Projects") resolved to a path that
+      // does not exist and every "@/..." import failed.
+      "@": fileURLToPath(new URL("./", import.meta.url))
     }
   }
 });

@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3 rounded-2xl bg-[var(--bg-sunken)] px-3 py-2 text-muted-foreground transition focus-within:border-[var(--red)] focus-within:text-foreground">
             <button
               type="submit"
-              aria-label="Search UniBridge"
+              aria-label="Search students"
               className="rounded-full text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <Search className="size-4" aria-hidden />
@@ -64,8 +64,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <input
               name="q"
               type="search"
-              aria-label="Search students, events, and guides"
-              placeholder="Search students, events, guides"
+              aria-label="Search students"
+              placeholder="Search students"
               className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-foreground outline-none placeholder:text-muted-foreground"
             />
           </div>

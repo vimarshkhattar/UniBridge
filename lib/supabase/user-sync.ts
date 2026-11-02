@@ -21,6 +21,7 @@ type ProfileRow = {
   academic_year: string | null;
   country: string | null;
   languages: string[] | null;
+  courses: string[] | null;
   preferred_activities: string[] | null;
   study_style: string | null;
   preferred_study_times: string[] | null;
@@ -243,7 +244,7 @@ export async function loadCurrentUserProfile() {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, email, avatar_url, major, academic_year, country, languages, preferred_activities, study_style, preferred_study_times, student_status, bio, show_country, show_languages, show_courses, same_university_only, universities(name)")
+    .select("id, full_name, email, avatar_url, major, academic_year, country, languages, courses, preferred_activities, study_style, preferred_study_times, student_status, bio, show_country, show_languages, show_courses, same_university_only, universities(name)")
     .eq("id", user.id)
     .maybeSingle<ProfileRow>();
 
@@ -278,6 +279,7 @@ export async function loadCurrentUserProfile() {
     academicYear: (data.academic_year ?? "") as StoredProfile["academicYear"],
     country: data.country ?? "",
     languages: data.languages ?? [],
+    courses: data.courses ?? [],
     interests: data.preferred_activities ?? [],
     preferredActivities: data.preferred_activities ?? [],
     studyStyle: data.study_style ?? "",
@@ -294,16 +296,48 @@ export async function loadCurrentUserProfile() {
   } satisfies StoredProfile;
 }
 
-export async function loadRemoteDiscoverProfiles(): Promise<StoredProfile[]> {
+const DISCOVER_PROFILES_TTL_MS = 30_000;
+
+let discoverProfilesCache: { fetchedAt: number; profiles: StoredProfile[] } | null = null;
+let discoverProfilesInFlight: Promise<StoredProfile[]> | null = null;
+
+/** Drops the cache so the next read reflects a change the user just made. */
+export function invalidateDiscoverProfiles() {
+  discoverProfilesCache = null;
+}
+
+/**
+ * Four screens load this same list on mount (dashboard, discover, connections,
+ * messaging dock), and each navigation refetched all of it. Results are cached
+ * briefly and concurrent callers share one request.
+ */
+export async function loadRemoteDiscoverProfiles(options?: { force?: boolean }): Promise<StoredProfile[]> {
+  if (options?.force) discoverProfilesCache = null;
+
+  if (discoverProfilesCache && Date.now() - discoverProfilesCache.fetchedAt < DISCOVER_PROFILES_TTL_MS) {
+    return discoverProfilesCache.profiles;
+  }
+
+  discoverProfilesInFlight ??= fetchRemoteDiscoverProfiles()
+    .then((profiles) => {
+      discoverProfilesCache = { fetchedAt: Date.now(), profiles };
+      return profiles;
+    })
+    .finally(() => {
+      discoverProfilesInFlight = null;
+    });
+
+  return discoverProfilesInFlight;
+}
+
+async function fetchRemoteDiscoverProfiles(): Promise<StoredProfile[]> {
   const supabase = client();
   const user = await currentUser();
   if (!supabase || !user) return [];
 
-  await loadCurrentUserProfile();
-
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, email, avatar_url, major, academic_year, country, languages, preferred_activities, study_style, preferred_study_times, student_status, bio, show_country, show_languages, show_courses, same_university_only, universities(name)");
+    .select("id, full_name, email, avatar_url, major, academic_year, country, languages, courses, preferred_activities, study_style, preferred_study_times, student_status, bio, show_country, show_languages, show_courses, same_university_only, universities(name)");
 
   if (error || !data) return [];
 
@@ -331,7 +365,7 @@ export async function loadRemoteDiscoverProfiles(): Promise<StoredProfile[]> {
     academicYear: (profile.academic_year ?? "") as StoredProfile["academicYear"],
     country: profile.show_country ? profile.country ?? "" : "Hidden",
     languages: profile.show_languages ? profile.languages ?? [] : [],
-    courses: profile.show_courses ? defaultStoredProfile.courses : [],
+    courses: profile.show_courses ? profile.courses ?? [] : [],
     interests: profile.preferred_activities ?? [],
     preferredActivities: profile.preferred_activities ?? [],
     studyStyle: profile.study_style ?? "",
@@ -365,6 +399,7 @@ export async function upsertCurrentUserProfile(profile: StoredProfile) {
     academic_year: profile.academicYear,
     country: profile.country,
     languages: profile.languages,
+    courses: profile.courses,
     preferred_activities: profile.interests,
     study_style: profile.studyStyle,
     preferred_study_times: profile.preferredStudyTimes,
@@ -375,6 +410,8 @@ export async function upsertCurrentUserProfile(profile: StoredProfile) {
     show_courses: profile.visibility.courses,
     same_university_only: profile.visibility.sameUniversityOnly
   });
+
+  invalidateDiscoverProfiles();
 
   await supabase.from("connection_preferences").delete().eq("user_id", user.id);
   if (profile.connectionTypes.length) {

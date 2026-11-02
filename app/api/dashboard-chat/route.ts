@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
+import { GROQ_MODEL } from "@/lib/groq-model";
 import { dashboardChatSchema } from "@/lib/validation";
 
 const systemPrompt = `You are UniBridge's dashboard chatbot for international university students.
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
 
   try {
     const completion = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: GROQ_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         ...(parsed.data.history ?? []).map((message) => ({
@@ -69,7 +70,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ answer });
   } catch (error) {
-    console.error("Dashboard chatbot failed", error);
+    // Logged loudly with the model name: a decommissioned model returns
+    // model_not_found on every call, which otherwise looks like the chatbot
+    // "working" but repeating one canned answer.
+    console.error(`Dashboard chatbot failed (model: ${GROQ_MODEL})`, error);
     return NextResponse.json(fallbackAnswer(parsed.data.question));
   }
 }

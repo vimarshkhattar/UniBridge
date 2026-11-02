@@ -23,9 +23,11 @@ export async function proxy(request: NextRequest) {
     }
   });
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  // getClaims verifies the JWT locally using the project's signing key, so a
+  // page change costs no network round trip. getUser() called the Supabase auth
+  // server on every single navigation, which is what made each tab feel slow.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims;
 
   if (!user) {
     const url = request.nextUrl.clone();
@@ -34,18 +36,21 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (!user.email_confirmed_at) {
-    await supabase.auth.signOut();
-    const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
-    url.search = "";
-    url.searchParams.set("error", "Please confirm your Stony Brook email before continuing.");
-    return NextResponse.redirect(url);
-  }
-
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
+  // Only the protected app routes need an auth check. Everything else (static
+  // assets, API routes, the public marketing pages) skips the middleware.
+  matcher: [
+    "/dashboard/:path*",
+    "/discover/:path*",
+    "/events/:path*",
+    "/assistant/:path*",
+    "/guides/:path*",
+    "/connections/:path*",
+    "/profile/:path*",
+    "/settings/:path*",
+    "/onboarding/:path*"
+  ]
 };

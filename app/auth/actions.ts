@@ -19,6 +19,7 @@ async function getAppOrigin() {
 export async function signUpAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
   const fullName = String(formData.get("fullName") ?? "").trim();
   const supabase = await createSupabaseServerClient();
 
@@ -26,6 +27,15 @@ export async function signUpAction(formData: FormData) {
 
   if (!email.endsWith(STONY_BROOK_EMAIL_DOMAIN)) {
     redirect(`/sign-up?error=${encodeURIComponent("Please use your Stony Brook email address.")}`);
+  }
+
+  // Re-checked here as well as in the browser: the client check can be skipped.
+  if (password !== confirmPassword) {
+    redirect(`/sign-up?error=${encodeURIComponent("Both password fields must match.")}`);
+  }
+
+  if (password.length < 8) {
+    redirect(`/sign-up?error=${encodeURIComponent("Use a password of at least 8 characters.")}`);
   }
 
   const { data, error } = await supabase.auth.signUp({
@@ -43,7 +53,11 @@ export async function signUpAction(formData: FormData) {
   // session and the student goes straight into onboarding.
   if (data.session) redirect("/onboarding");
 
-  redirect(`/sign-in?message=${encodeURIComponent("Account created. Sign in to finish setting up your profile.")}&next=/onboarding`);
+  redirect(
+    `/sign-in?message=${encodeURIComponent(
+      "Account created. Open the confirmation link we emailed to your Stony Brook address, then sign in. You only need to do this once."
+    )}&next=/onboarding`
+  );
 }
 
 export async function signInAction(formData: FormData) {
@@ -56,6 +70,18 @@ export async function signInAction(formData: FormData) {
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) redirect(`/sign-in?error=${encodeURIComponent(error.message)}`);
+
+  // Checked only at sign-in, never in middleware. email_confirmed_at is set
+  // permanently once the student opens the link, so this gate passes silently
+  // from then on and the session is never interrupted mid-use.
+  if (!data.user.email_confirmed_at) {
+    await supabase.auth.signOut();
+    redirect(
+      `/sign-in?error=${encodeURIComponent(
+        "Please open the confirmation link we emailed to your Stony Brook address, then sign in again."
+      )}`
+    );
+  }
 
   const { data: profile } = await supabase
     .from("profiles")

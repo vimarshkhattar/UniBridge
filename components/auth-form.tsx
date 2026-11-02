@@ -28,7 +28,7 @@ const STRENGTH = [
   { label: "Strong", color: "#3fbe7d" }
 ];
 
-type Errors = Partial<Record<"fullName" | "email" | "password", string>>;
+type Errors = Partial<Record<"fullName" | "email" | "password" | "confirmPassword", string>>;
 
 export function AuthForm({
   mode,
@@ -47,8 +47,8 @@ export function AuthForm({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -69,6 +69,9 @@ export function AuthForm({
       next.password = "Use at least 8 characters";
     } else if (isSignUp && strength < 2) {
       next.password = "Add a number or symbol to strengthen this";
+    }
+    if (isSignUp && confirmPassword !== password) {
+      next.confirmPassword = confirmPassword ? "Passwords do not match" : "Re-enter your password to confirm it";
     }
 
     return next;
@@ -202,11 +205,21 @@ export function AuthForm({
           </div>
         )}
 
-        {!isSignUp && (
-          <label className="remember">
-            <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
-            <span>Keep me signed in</span>
-          </label>
+        {isSignUp && (
+          <Field id={`${uid}-confirm-password`} label="Confirm password" error={errors.confirmPassword}>
+            <input
+              id={`${uid}-confirm-password`}
+              name="confirmPassword"
+              type={showPassword ? "text" : "password"}
+              className="field-input"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Type your password once more"
+              autoComplete="new-password"
+              required
+              minLength={8}
+            />
+          </Field>
         )}
 
         {next && <input type="hidden" name="next" value={next} />}

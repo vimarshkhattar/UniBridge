@@ -17,8 +17,11 @@ const starterQuestions = [
   "What should I ask my academic advisor?"
 ];
 
-const THINKING_DELAY_MS = 6000;
-const TYPING_INTERVAL_MS = 18;
+// The reveal lasts the same short moment no matter how long the answer is.
+// Previously this was 18ms per 2 characters, so a 1000-character answer took
+// about 9 seconds to appear, on top of a 6-second artificial "thinking" pause.
+const TYPING_DURATION_MS = 450;
+const TYPING_FRAMES = 30;
 
 function cleanChatText(value: string) {
   return value
@@ -39,19 +42,32 @@ export function DashboardChatbot() {
   const [loading, setLoading] = useState(false);
   const [typing, setTyping] = useState(false);
   const [error, setError] = useState("");
+  // True when the API served its canned text instead of a real model answer.
+  // Without this the chatbot repeats one generic reply and looks like it works.
+  const [usedFallback, setUsedFallback] = useState(false);
 
   function wait(ms: number) {
     return new Promise((resolve) => window.setTimeout(resolve, ms));
   }
 
   async function typeAnswer(nextMessages: ChatMessage[], answer: string) {
-    setTyping(true);
-    setMessages([...nextMessages, { role: "assistant", content: "" }]);
+    const skipAnimation =
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    for (let index = 0; index <= answer.length; index += 2) {
-      const partialAnswer = answer.slice(0, index);
-      setMessages([...nextMessages, { role: "assistant", content: partialAnswer }]);
-      await wait(TYPING_INTERVAL_MS);
+    if (skipAnimation || answer.length === 0) {
+      setMessages([...nextMessages, { role: "assistant", content: answer }]);
+      return;
+    }
+
+    setTyping(true);
+
+    const frames = Math.min(TYPING_FRAMES, answer.length);
+    const charactersPerFrame = Math.ceil(answer.length / frames);
+    const frameInterval = TYPING_DURATION_MS / frames;
+
+    for (let index = charactersPerFrame; index < answer.length; index += charactersPerFrame) {
+      setMessages([...nextMessages, { role: "assistant", content: answer.slice(0, index) }]);
+      await wait(frameInterval);
     }
 
     setMessages([...nextMessages, { role: "assistant", content: answer }]);
@@ -67,6 +83,7 @@ export function DashboardChatbot() {
     setQuestion("");
     setLoading(true);
     setError("");
+    setUsedFallback(false);
 
     try {
       const response = await fetch("/api/dashboard-chat", {
@@ -78,7 +95,9 @@ export function DashboardChatbot() {
         })
       });
 
-      const data = (await response.json().catch(() => null)) as { answer?: unknown; error?: unknown } | null;
+      const data = (await response.json().catch(() => null)) as
+        | { answer?: unknown; error?: unknown; fallback?: unknown }
+        | null;
 
       if (!response.ok) {
         setLoading(false);
@@ -93,7 +112,7 @@ export function DashboardChatbot() {
         return;
       }
 
-      await wait(THINKING_DELAY_MS);
+      setUsedFallback(data?.fallback === true);
       setLoading(false);
       await typeAnswer(nextMessages, answer);
     } catch {
@@ -125,13 +144,12 @@ export function DashboardChatbot() {
               </div>
             ))}
             {loading && (
-              <div className="max-w-[90%] rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+              <div
+                className="max-w-[90%] rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground"
+                role="status"
+                aria-live="polite"
+              >
                 Thinking...
-              </div>
-            )}
-            {typing && (
-              <div className="max-w-[90%] rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-                Typing...
               </div>
             )}
           </div>
@@ -158,7 +176,17 @@ export function DashboardChatbot() {
             placeholder="Ask about classes, professors, campus life, events, studying, housing basics..."
             className="min-h-20"
           />
-          {error && <p className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+          {error && <p className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{error}</p>}
+          {usedFallback && !error && (
+            <p
+              className="rounded-md border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-200"
+              role="status"
+              aria-live="polite"
+            >
+              The AI assistant is unavailable right now, so this is a general guidance message rather than an answer to
+              your question. Please try again shortly.
+            </p>
+          )}
           <Button type="submit" disabled={loading || typing || question.trim().length < 3} className="w-full sm:w-fit">
             <Send className="size-4" /> Ask chatbot
           </Button>
